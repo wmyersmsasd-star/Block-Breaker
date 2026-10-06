@@ -104,12 +104,12 @@ function update() {
   // Losing a ball costs one life, but leaves the remaining bricks intact.
   if (ball.y > HEIGHT) {
     lives = lives - 1;
+    paddle.x = WIDTH / 2 - paddle.width / 2;
     if (lives === 0) {
       gameOver = true;
       return;
     }
     resetBall();
-    paddle.x = WIDTH / 2 - paddle.width / 2;
   }
 }
 
