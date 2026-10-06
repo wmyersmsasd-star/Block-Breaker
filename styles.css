@@ -163,6 +163,38 @@ canvas {
     0 0 60px rgba(255, 67, 166, 0.25);
 }
 
+.touch-controls {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 14px;
+}
+
+.touch-controls button {
+  width: 74px;
+  height: 54px;
+  border: 1px solid rgba(126, 249, 255, 0.8);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(35, 46, 91, 0.95), rgba(22, 16, 53, 0.95));
+  box-shadow: 0 0 14px rgba(20, 233, 255, 0.22);
+  color: #7ef9ff;
+  cursor: pointer;
+  font: bold 28px "Courier New", monospace;
+  touch-action: none;
+  user-select: none;
+}
+
+.touch-controls button:active {
+  background: linear-gradient(145deg, #ff42bd, #7a5cff);
+  color: #fff;
+  transform: scale(0.96);
+}
+
+.touch-controls button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
 p {
   margin: 12px 0 0;
   font-size: 14px;
@@ -180,6 +212,10 @@ p {
 
   .brick-showcase span {
     width: 42px;
+  }
+
+  #game-view > p {
+    font-size: 11px;
   }
 }
 

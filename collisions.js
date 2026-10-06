@@ -41,7 +41,15 @@ function bounceOffWalls() {
 function bounceOffPaddle() {
   if (boxesTouch(ball, paddle) && ball.vy > 0) {
     ball.y = paddle.y - ball.height;  // sit on top of the paddle
-    ball.vy = -ball.vy;
+    const ballCenter = ball.x + ball.width / 2;
+    const paddleCenter = paddle.x + paddle.width / 2;
+    const hitPosition = (ballCenter - paddleCenter) / (paddle.width / 2);
+    let angle = Math.max(-1, Math.min(1, hitPosition)) * 1.05;
+    if (Math.abs(angle) < 0.16) {
+      angle = ballCenter < paddleCenter ? -0.16 : 0.16;
+    }
+    ball.vx = Math.sin(angle) * ballSpeed;
+    ball.vy = -Math.cos(angle) * ballSpeed;
   }
 }
 
@@ -77,6 +85,7 @@ function bounceOffBricks() {
     }
 
     bricks.splice(i, 1);
-    break;  // bounce off one brick per update, then stop looking
+    return brick;  // bounce off one brick per update, then stop looking
   }
+  return null;
 }

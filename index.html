@@ -16,12 +16,16 @@
       <h1 id="game-title">BLOCK<br><span>BREAKER</span></h1>
       <p class="home-copy">Bounce the ball. Break every brick. Keep your 3 lives!</p>
       <button id="play-button" type="button">PLAY NOW <span aria-hidden="true">&#9654;</span></button>
-      <p class="home-hint">Use ← → or A / D to move</p>
+      <p class="home-hint">Use ← →, A / D, or touch controls to move</p>
     </section>
 
     <section id="game-view" hidden>
       <canvas id="game" width="600" height="450" aria-label="Block Breaker game"></canvas>
-      <p>Move with the left and right arrow keys, or A and D. Lose all 3 lives? Press R to restart.</p>
+      <div class="touch-controls" aria-label="Touch controls">
+        <button type="button" data-key="arrowleft" aria-label="Move left">&#8592;</button>
+        <button type="button" data-key="arrowright" aria-label="Move right">&#8594;</button>
+      </div>
+      <p>Move with ← →, A / D, or touch controls. Press R to restart after game over.</p>
     </section>
   </main>
 

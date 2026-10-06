@@ -11,6 +11,7 @@ const ctx = canvas.getContext("2d");
 const homeScreen = document.getElementById("home-screen");
 const gameView = document.getElementById("game-view");
 const playButton = document.getElementById("play-button");
+const touchButtons = document.querySelectorAll(".touch-controls button");
 
 const WIDTH = canvas.width;   // 600
 const HEIGHT = canvas.height; // 450
@@ -23,6 +24,7 @@ const HEIGHT = canvas.height; // 450
 // A positive vy means the ball is moving DOWN the screen.
 // ------------------------------------------------------------
 const BALL_SPEED = 4;
+const MAX_BALL_SPEED = 8;
 
 const ball = {
   x: 0,
@@ -33,6 +35,7 @@ const ball = {
   vy: 0,
   color: "#ff4fd8"
 };
+let ballSpeed = BALL_SPEED;
 
 // Put the ball in the center and reset its speed and direction.
 function resetBall() {
@@ -64,6 +67,10 @@ const STARTING_LIVES = 3;
 let lives = STARTING_LIVES;
 let gameOver = false;
 let hasStarted = false;
+let score = 0;
+let level = 1;
+let particles = [];
+let levelBannerTime = 0;
 
 
 // ------------------------------------------------------------
@@ -89,6 +96,19 @@ document.addEventListener("keyup", function (event) {
 });
 
 playButton.addEventListener("click", startGame);
+for (const button of touchButtons) {
+  const key = button.dataset.key;
+  button.addEventListener("pointerdown", function (event) {
+    event.preventDefault();
+    keys[key] = true;
+    button.setPointerCapture(event.pointerId);
+  });
+  for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"]) {
+    button.addEventListener(eventName, function () {
+      keys[key] = false;
+    });
+  }
+}
 
 
 // ------------------------------------------------------------
@@ -105,7 +125,16 @@ function update() {
 
   bounceOffWalls();   // collisions.js
   bounceOffPaddle();  // collisions.js
-  bounceOffBricks();  // collisions.js
+  const brokenBrick = bounceOffBricks();  // collisions.js
+  if (brokenBrick) {
+    score += 100;
+    burstParticles(brokenBrick);
+    if (bricks.length === 0) {
+      advanceLevel();
+    }
+  }
+  updateParticles();
+  levelBannerTime = Math.max(0, levelBannerTime - STEP / 1000);
 
   // Losing a ball costs one life, but leaves the remaining bricks intact.
   if (ball.y > HEIGHT) {
@@ -122,20 +151,54 @@ function update() {
 function restartGame() {
   lives = STARTING_LIVES;
   gameOver = false;
+  score = 0;
+  level = 1;
+  ballSpeed = BALL_SPEED;
+  particles = [];
   bricks = makeBricks();
   paddle.x = WIDTH / 2 - paddle.width / 2;
   resetBall();
 }
 
 function startGame() {
-  bricks = makeBricks();
-  lives = STARTING_LIVES;
-  gameOver = false;
+  restartGame();
   hasStarted = true;
-  paddle.x = WIDTH / 2 - paddle.width / 2;
-  resetBall();
   homeScreen.hidden = true;
   gameView.hidden = false;
+}
+
+function advanceLevel() {
+  level += 1;
+  ballSpeed = Math.min(BALL_SPEED + (level - 1) * 0.5, MAX_BALL_SPEED);
+  bricks = makeBricks(level);
+  paddle.x = WIDTH / 2 - paddle.width / 2;
+  resetBall();
+  levelBannerTime = 1.8;
+}
+
+function burstParticles(brick) {
+  for (let i = 0; i < 12; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 3;
+    particles.push({
+      x: brick.x + brick.width / 2,
+      y: brick.y + brick.height / 2,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0.55,
+      color: brick.color
+    });
+  }
+}
+
+function updateParticles() {
+  for (const particle of particles) {
+    particle.x += particle.vx;
+    particle.y += particle.vy;
+    particle.vy += 0.04;
+    particle.life -= STEP / 1000;
+  }
+  particles = particles.filter((particle) => particle.life > 0);
 }
 
 function movePaddle() {
@@ -198,11 +261,18 @@ function draw() {
 
   drawBricks();  // bricks.js
 
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = "#f7f5ff";
-  ctx.font = "bold 16px 'Courier New', monospace";
-  ctx.textAlign = "left";
-  ctx.fillText(`LIVES: ${lives}`, 18, 28);
+  drawParticles();
+  drawHud();
+
+  if (levelBannerTime > 0 && !gameOver) {
+    ctx.textAlign = "center";
+    ctx.shadowColor = "#7ef9ff";
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 30px 'Courier New', monospace";
+    ctx.fillText(`LEVEL ${level}`, WIDTH / 2, HEIGHT / 2);
+    ctx.shadowBlur = 0;
+  }
 
   if (gameOver) {
     ctx.fillStyle = "rgba(5, 8, 22, 0.78)";
@@ -212,12 +282,39 @@ function draw() {
     ctx.shadowBlur = 20;
     ctx.fillStyle = "#ff8be5";
     ctx.font = "bold 38px 'Courier New', monospace";
-    ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2 - 12);
+    ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2 - 28);
     ctx.shadowBlur = 0;
     ctx.fillStyle = "#f7f5ff";
     ctx.font = "18px 'Courier New', monospace";
-    ctx.fillText("PRESS R TO RESTART", WIDTH / 2, HEIGHT / 2 + 28);
+    ctx.fillText(`FINAL SCORE  ${score}`, WIDTH / 2, HEIGHT / 2 + 8);
+    ctx.fillText("PRESS R TO RESTART", WIDTH / 2, HEIGHT / 2 + 42);
   }
+}
+
+function drawHud() {
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#f7f5ff";
+  ctx.font = "bold 14px 'Courier New', monospace";
+  ctx.textAlign = "left";
+  ctx.fillText(`SCORE ${String(score).padStart(5, "0")}`, 16, 28);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#7ef9ff";
+  ctx.fillText(`LEVEL ${level}`, WIDTH / 2, 28);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#ff8be5";
+  ctx.fillText(`LIVES ${"\u2665 ".repeat(lives).trim()}`, WIDTH - 16, 28);
+}
+
+function drawParticles() {
+  for (const particle of particles) {
+    ctx.globalAlpha = Math.min(1, particle.life * 2);
+    ctx.fillStyle = particle.color;
+    ctx.shadowColor = particle.color;
+    ctx.shadowBlur = 10;
+    ctx.fillRect(particle.x, particle.y, 4, 4);
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
 }
 
 
