@@ -27,7 +27,8 @@ const ball = {
   width: 12,
   height: 12,
   vx: 0,
-  vy: 0
+  vy: 0,
+  color: "#ff4fd8"
 };
 
 // Put the ball in the center and reset its speed and direction.
@@ -47,7 +48,8 @@ const paddle = {
   y: HEIGHT - 30,
   width: 90,
   height: 12,
-  speed: 6
+  speed: 6,
+  color: "#7ef9ff"
 };
 
 
@@ -55,6 +57,9 @@ const paddle = {
 // THE BRICKS (the list is filled in by makeBricks() in bricks.js)
 // ------------------------------------------------------------
 let bricks = [];
+const STARTING_LIVES = 3;
+let lives = STARTING_LIVES;
+let gameOver = false;
 
 
 // ------------------------------------------------------------
@@ -64,7 +69,11 @@ let bricks = [];
 const keys = {};
 
 document.addEventListener("keydown", function (event) {
-  keys[event.key.toLowerCase()] = true;
+  const key = event.key.toLowerCase();
+  keys[key] = true;
+  if (key === "r" && gameOver) {
+    restartGame();
+  }
   // Stop the arrow keys from scrolling the page.
   if (event.key.startsWith("Arrow")) {
     event.preventDefault();
@@ -81,6 +90,10 @@ document.addEventListener("keyup", function (event) {
 // what they touched.
 // ------------------------------------------------------------
 function update() {
+  if (gameOver) {
+    return;
+  }
+
   movePaddle();
   moveBall();
 
@@ -88,10 +101,23 @@ function update() {
   bounceOffPaddle();  // collisions.js
   bounceOffBricks();  // collisions.js
 
-  // The ball fell off the bottom: back to the center.
+  // Losing a ball costs one life, but leaves the remaining bricks intact.
   if (ball.y > HEIGHT) {
+    lives = lives - 1;
+    if (lives === 0) {
+      gameOver = true;
+      return;
+    }
     resetBall();
   }
+}
+
+function restartGame() {
+  lives = STARTING_LIVES;
+  gameOver = false;
+  bricks = makeBricks();
+  paddle.x = WIDTH / 2 - paddle.width / 2;
+  resetBall();
 }
 
 function movePaddle() {
@@ -122,14 +148,58 @@ function moveBall() {
 // white shapes.
 // ------------------------------------------------------------
 function draw() {
-  ctx.fillStyle = "black";
+  const background = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+  background.addColorStop(0, "#0b1020");
+  background.addColorStop(1, "#12091f");
+  ctx.fillStyle = background;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  ctx.fillStyle = "white";
+  const glow = ctx.createRadialGradient(
+    WIDTH / 2,
+    HEIGHT * 0.15,
+    12,
+    WIDTH / 2,
+    HEIGHT * 0.15,
+    WIDTH * 0.8
+  );
+  glow.addColorStop(0, "rgba(71, 214, 255, 0.35)");
+  glow.addColorStop(1, "rgba(71, 214, 255, 0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  ctx.shadowColor = paddle.color;
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = paddle.color;
   ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+  ctx.shadowColor = ball.color;
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = ball.color;
   ctx.fillRect(ball.x, ball.y, ball.width, ball.height);
+  ctx.shadowBlur = 0;
 
   drawBricks();  // bricks.js
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#f7f5ff";
+  ctx.font = "bold 16px 'Courier New', monospace";
+  ctx.textAlign = "left";
+  ctx.fillText(`LIVES: ${lives}`, 18, 28);
+
+  if (gameOver) {
+    ctx.fillStyle = "rgba(5, 8, 22, 0.78)";
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    ctx.textAlign = "center";
+    ctx.shadowColor = "#ff4fd8";
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = "#ff8be5";
+    ctx.font = "bold 38px 'Courier New', monospace";
+    ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2 - 12);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#f7f5ff";
+    ctx.font = "18px 'Courier New', monospace";
+    ctx.fillText("PRESS R TO RESTART", WIDTH / 2, HEIGHT / 2 + 28);
+  }
 }
 
 
