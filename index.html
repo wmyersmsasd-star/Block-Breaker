@@ -8,8 +8,21 @@
 </head>
 <body>
   <main>
-    <canvas id="game" width="600" height="450" aria-label="Block Breaker game"></canvas>
-    <p>Move with the left and right arrow keys, or A and D. Lose all 3 lives? Press R to restart.</p>
+    <section id="home-screen" class="home-screen" aria-labelledby="game-title">
+      <div class="brick-showcase" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <p class="eyebrow">Ready, set, smash!</p>
+      <h1 id="game-title">BLOCK<br><span>BREAKER</span></h1>
+      <p class="home-copy">Bounce the ball. Break every brick. Keep your 3 lives!</p>
+      <button id="play-button" type="button">PLAY NOW <span aria-hidden="true">&#9654;</span></button>
+      <p class="home-hint">Use ← → or A / D to move</p>
+    </section>
+
+    <section id="game-view" hidden>
+      <canvas id="game" width="600" height="450" aria-label="Block Breaker game"></canvas>
+      <p>Move with the left and right arrow keys, or A and D. Lose all 3 lives? Press R to restart.</p>
+    </section>
   </main>
 
   <!-- The order matters: game.js goes first because the other files use its settings. -->

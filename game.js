@@ -8,6 +8,9 @@
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const homeScreen = document.getElementById("home-screen");
+const gameView = document.getElementById("game-view");
+const playButton = document.getElementById("play-button");
 
 const WIDTH = canvas.width;   // 600
 const HEIGHT = canvas.height; // 450
@@ -60,6 +63,7 @@ let bricks = [];
 const STARTING_LIVES = 3;
 let lives = STARTING_LIVES;
 let gameOver = false;
+let hasStarted = false;
 
 
 // ------------------------------------------------------------
@@ -84,13 +88,15 @@ document.addEventListener("keyup", function (event) {
   keys[event.key.toLowerCase()] = false;
 });
 
+playButton.addEventListener("click", startGame);
+
 
 // ------------------------------------------------------------
 // UPDATE: runs 60 times every second. Move things, then check
 // what they touched.
 // ------------------------------------------------------------
 function update() {
-  if (gameOver) {
+  if (!hasStarted || gameOver) {
     return;
   }
 
@@ -119,6 +125,17 @@ function restartGame() {
   bricks = makeBricks();
   paddle.x = WIDTH / 2 - paddle.width / 2;
   resetBall();
+}
+
+function startGame() {
+  bricks = makeBricks();
+  lives = STARTING_LIVES;
+  gameOver = false;
+  hasStarted = true;
+  paddle.x = WIDTH / 2 - paddle.width / 2;
+  resetBall();
+  homeScreen.hidden = true;
+  gameView.hidden = false;
 }
 
 function movePaddle() {
@@ -233,8 +250,6 @@ function frame(now) {
 }
 
 function start() {
-  bricks = makeBricks();  // bricks.js
-  resetBall();
   lastTime = performance.now();
   requestAnimationFrame(frame);
 }
