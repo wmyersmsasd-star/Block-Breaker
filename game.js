@@ -35,8 +35,8 @@ const ball = {
 function resetBall() {
   ball.x = WIDTH / 2 - ball.width / 2;
   ball.y = HEIGHT / 2 - ball.height / 2;
-  ball.vx = BALL_SPEED;  // right
-  ball.vy = BALL_SPEED;  // down
+  ball.vx = 0;
+  ball.vy = BALL_SPEED;  // straight down
 }
 
 
@@ -109,6 +109,7 @@ function update() {
       return;
     }
     resetBall();
+    paddle.x = WIDTH / 2 - paddle.width / 2;
   }
 }
 
