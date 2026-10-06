@@ -195,6 +195,38 @@ canvas {
   outline-offset: 3px;
 }
 
+.powerup-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  margin: 12px 0 0;
+  color: #c9d8ff;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+.powerup-legend b {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  margin-right: 4px;
+  place-items: center;
+  border-radius: 50%;
+  background: #7ef9ff;
+  color: #101326;
+}
+
+.powerup-legend span:nth-child(2) b {
+  background: #b995ff;
+}
+
+.powerup-legend span:nth-child(3) b {
+  background: #ff6b9d;
+}
+
 p {
   margin: 12px 0 0;
   font-size: 14px;

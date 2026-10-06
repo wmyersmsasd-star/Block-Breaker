@@ -20,6 +20,7 @@ const BRICK_COLORS = [
 function makeBricks(level = 1) {
   const list = [];
   const rows = Math.min(BRICK_ROWS + Math.floor((level - 1) / 3), 6);
+  const pattern = (level - 1) % 4;
 
   // Center the whole block of bricks on the screen.
   const totalWidth = BRICK_COLUMNS * BRICK_WIDTH + (BRICK_COLUMNS - 1) * BRICK_GAP;
@@ -27,13 +28,25 @@ function makeBricks(level = 1) {
 
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < BRICK_COLUMNS; col++) {
+      const distanceFromCenter = Math.abs(col - (BRICK_COLUMNS - 1) / 2)
+        + Math.abs(row - (rows - 1) / 2);
+      const included = pattern === 0
+        || (pattern === 1 && (row + col) % 2 === 0)
+        || (pattern === 2 && distanceFromCenter <= (rows + 1) / 2)
+        || (pattern === 3 && col % 4 !== 1);
+      if (!included) {
+        continue;
+      }
+
       const colorIndex = (row + level - 1) % BRICK_COLORS.length;
+      const hits = level >= 3 && row < Math.min(2, Math.floor((level - 1) / 2)) ? 2 : 1;
       list.push({
         x: left + col * (BRICK_WIDTH + BRICK_GAP),
         y: BRICKS_TOP + row * (BRICK_HEIGHT + BRICK_GAP),
         width: BRICK_WIDTH,
         height: BRICK_HEIGHT,
-        color: BRICK_COLORS[colorIndex]
+        color: BRICK_COLORS[colorIndex],
+        hits
       });
     }
   }
@@ -53,5 +66,9 @@ function drawBricks() {
     ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
     ctx.lineWidth = 1.5;
     ctx.strokeRect(brick.x + 1, brick.y + 1, brick.width - 2, brick.height - 2);
+    if (brick.hits > 1) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.fillRect(brick.x + brick.width / 2 - 4, brick.y + brick.height / 2 - 2, 8, 4);
+    }
   }
 }

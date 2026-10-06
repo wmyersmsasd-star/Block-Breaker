@@ -48,13 +48,14 @@ function bounceOffPaddle() {
     if (Math.abs(angle) < 0.16) {
       angle = ballCenter < paddleCenter ? -0.16 : 0.16;
     }
-    ball.vx = Math.sin(angle) * ballSpeed;
-    ball.vy = -Math.cos(angle) * ballSpeed;
+    const speed = ballSpeed * (activeEffects.slow > 0 ? 0.72 : 1);
+    ball.vx = Math.sin(angle) * speed;
+    ball.vy = -Math.cos(angle) * speed;
   }
 }
 
 
-// The ball bounces off and breaks the brick it touches.
+// The ball bounces off the brick it touches and damages it.
 function bounceOffBricks() {
   for (let i = 0; i < bricks.length; i++) {
     const brick = bricks[i];
@@ -84,8 +85,12 @@ function bounceOffBricks() {
       }
     }
 
-    bricks.splice(i, 1);
-    return brick;  // bounce off one brick per update, then stop looking
+    brick.hits -= 1;
+    const destroyed = brick.hits === 0;
+    if (destroyed) {
+      bricks.splice(i, 1);
+    }
+    return { brick, destroyed };  // stop after the first brick hit
   }
   return null;
 }

@@ -42,7 +42,7 @@ function resetBall() {
   ball.x = WIDTH / 2 - ball.width / 2;
   ball.y = HEIGHT / 2 - ball.height / 2;
   ball.vx = 0;
-  ball.vy = BALL_SPEED;  // straight down
+  ball.vy = ballSpeed * (activeEffects.slow > 0 ? 0.72 : 1);  // straight down
 }
 
 
@@ -70,6 +70,8 @@ let hasStarted = false;
 let score = 0;
 let level = 1;
 let particles = [];
+let powerUps = [];
+let activeEffects = { wide: 0, slow: 0 };
 let levelBannerTime = 0;
 
 
@@ -125,15 +127,20 @@ function update() {
 
   bounceOffWalls();   // collisions.js
   bounceOffPaddle();  // collisions.js
-  const brokenBrick = bounceOffBricks();  // collisions.js
-  if (brokenBrick) {
-    score += 100;
-    burstParticles(brokenBrick);
+  const brickHit = bounceOffBricks();  // collisions.js
+  if (brickHit) {
+    score += brickHit.destroyed ? 100 : 25;
+    burstParticles(brickHit.brick);
+    if (brickHit.destroyed) {
+      maybeDropPowerUp(brickHit.brick);
+    }
     if (bricks.length === 0) {
       advanceLevel();
     }
   }
   updateParticles();
+  updatePowerUps();
+  updateEffects();
   levelBannerTime = Math.max(0, levelBannerTime - STEP / 1000);
 
   // Losing a ball costs one life, but leaves the remaining bricks intact.
@@ -155,6 +162,9 @@ function restartGame() {
   level = 1;
   ballSpeed = BALL_SPEED;
   particles = [];
+  powerUps = [];
+  activeEffects = { wide: 0, slow: 0 };
+  paddle.width = 90;
   bricks = makeBricks();
   paddle.x = WIDTH / 2 - paddle.width / 2;
   resetBall();
@@ -171,9 +181,85 @@ function advanceLevel() {
   level += 1;
   ballSpeed = Math.min(BALL_SPEED + (level - 1) * 0.5, MAX_BALL_SPEED);
   bricks = makeBricks(level);
+  powerUps = [];
   paddle.x = WIDTH / 2 - paddle.width / 2;
   resetBall();
   levelBannerTime = 1.8;
+}
+
+function maybeDropPowerUp(brick) {
+  if (bricks.length === 0 || Math.random() > 0.22) {
+    return;
+  }
+  const types = ["wide", "slow", "life"];
+  powerUps.push({
+    x: brick.x + brick.width / 2 - 10,
+    y: brick.y + brick.height / 2 - 10,
+    width: 20,
+    height: 20,
+    vy: 2.2,
+    type: types[Math.floor(Math.random() * types.length)]
+  });
+}
+
+function updatePowerUps() {
+  for (let i = powerUps.length - 1; i >= 0; i--) {
+    const powerUp = powerUps[i];
+    powerUp.y += powerUp.vy;
+
+    if (boxesTouch(powerUp, paddle)) {
+      collectPowerUp(powerUp);
+      powerUps.splice(i, 1);
+    } else if (powerUp.y > HEIGHT) {
+      powerUps.splice(i, 1);
+    }
+  }
+}
+
+function collectPowerUp(powerUp) {
+  if (powerUp.type === "wide") {
+    activeEffects.wide = 12;
+    paddle.width = 140;
+    paddle.x = Math.max(0, Math.min(WIDTH - paddle.width, paddle.x - 25));
+  } else if (powerUp.type === "slow") {
+    if (activeEffects.slow === 0) {
+      setBallSpeed(ballSpeed * 0.72);
+    }
+    activeEffects.slow = 8;
+  } else if (powerUp.type === "life") {
+    if (lives < 5) {
+      lives += 1;
+    } else {
+      score += 250;
+    }
+  }
+}
+
+function updateEffects() {
+  const elapsed = STEP / 1000;
+  if (activeEffects.wide > 0) {
+    activeEffects.wide = Math.max(0, activeEffects.wide - elapsed);
+    if (activeEffects.wide === 0) {
+      paddle.width = 90;
+      paddle.x = Math.min(paddle.x, WIDTH - paddle.width);
+    }
+  }
+  if (activeEffects.slow > 0) {
+    activeEffects.slow = Math.max(0, activeEffects.slow - elapsed);
+    if (activeEffects.slow === 0) {
+      setBallSpeed(ballSpeed);
+    }
+  }
+}
+
+function setBallSpeed(speed) {
+  const currentSpeed = Math.hypot(ball.vx, ball.vy);
+  if (currentSpeed === 0) {
+    return;
+  }
+  const scale = speed / currentSpeed;
+  ball.vx *= scale;
+  ball.vy *= scale;
 }
 
 function burstParticles(brick) {
@@ -223,6 +309,27 @@ function moveBall() {
   ball.y = ball.y + ball.vy;
 }
 
+function drawPowerUps() {
+  const colors = { wide: "#7ef9ff", slow: "#b995ff", life: "#ff6b9d" };
+  const labels = { wide: "W", slow: "S", life: "+" };
+  for (const powerUp of powerUps) {
+    const color = colors[powerUp.type];
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(powerUp.x + 10, powerUp.y + 10, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#101326";
+    ctx.font = "bold 13px 'Courier New', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(labels[powerUp.type], powerUp.x + 10, powerUp.y + 10);
+  }
+  ctx.textBaseline = "alphabetic";
+}
+
 
 // ------------------------------------------------------------
 // DRAW: paints everything on the canvas. Black background,
@@ -260,6 +367,7 @@ function draw() {
   ctx.shadowBlur = 0;
 
   drawBricks();  // bricks.js
+  drawPowerUps();
 
   drawParticles();
   drawHud();
@@ -303,6 +411,15 @@ function drawHud() {
   ctx.textAlign = "right";
   ctx.fillStyle = "#ff8be5";
   ctx.fillText(`LIVES ${"\u2665 ".repeat(lives).trim()}`, WIDTH - 16, 28);
+  if (activeEffects.wide > 0 || activeEffects.slow > 0) {
+    ctx.textAlign = "center";
+    ctx.font = "bold 11px 'Courier New', monospace";
+    ctx.fillStyle = "#d8c8ff";
+    const effects = [];
+    if (activeEffects.wide > 0) effects.push(`WIDE ${Math.ceil(activeEffects.wide)}s`);
+    if (activeEffects.slow > 0) effects.push(`SLOW ${Math.ceil(activeEffects.slow)}s`);
+    ctx.fillText(effects.join("  "), WIDTH / 2, HEIGHT - 12);
+  }
 }
 
 function drawParticles() {
