@@ -463,20 +463,20 @@ function drawSkyBeam() {
 
 function drawHud() {
   ctx.shadowBlur = 0;
-  ctx.fillStyle = "#f7f5ff";
+  ctx.fillStyle = "#dedbe2";
   ctx.font = "bold 14px 'Courier New', monospace";
   ctx.textAlign = "left";
   ctx.fillText(`SCORE ${String(score).padStart(5, "0")}`, 16, 28);
   ctx.textAlign = "center";
-  ctx.fillStyle = "#7ef9ff";
+  ctx.fillStyle = "#a2c6c8";
   ctx.fillText(`LEVEL ${level}`, WIDTH / 2, 28);
   ctx.textAlign = "right";
-  ctx.fillStyle = "#ff8be5";
+  ctx.fillStyle = "#d6a0b4";
   ctx.fillText(`LIVES ${"\u2665 ".repeat(lives).trim()}`, WIDTH - 16, 28);
   if (activeEffects.wide > 0 || activeEffects.slow > 0) {
     ctx.textAlign = "center";
     ctx.font = "bold 11px 'Courier New', monospace";
-    ctx.fillStyle = "#d8c8ff";
+    ctx.fillStyle = "#bcb3ca";
     const effects = [];
     if (activeEffects.wide > 0) effects.push(`WIDE ${Math.ceil(activeEffects.wide)}s`);
     if (activeEffects.slow > 0) effects.push(`SLOW ${Math.ceil(activeEffects.slow)}s`);
