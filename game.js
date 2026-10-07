@@ -33,7 +33,7 @@ const ball = {
   height: 12,
   vx: 0,
   vy: 0,
-  color: "#ff4fd8"
+  color: "#d6a0b4"
 };
 let ballSpeed = BALL_SPEED;
 
@@ -55,7 +55,7 @@ const paddle = {
   width: 90,
   height: 12,
   speed: 6,
-  color: "#7ef9ff"
+  color: "#a2c6c8"
 };
 
 
@@ -347,7 +347,7 @@ function moveBall() {
 }
 
 function drawPowerUps() {
-  const colors = { wide: "#7ef9ff", slow: "#b995ff", life: "#ff6b9d" };
+  const colors = { wide: "#a2c6c8", slow: "#aa9bbf", life: "#ce91a7" };
   const labels = { wide: "W", slow: "S", life: "+" };
   for (const powerUp of powerUps) {
     const color = colors[powerUp.type];
@@ -358,7 +358,7 @@ function drawPowerUps() {
     ctx.arc(powerUp.x + 10, powerUp.y + 10, 10, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "#101326";
+    ctx.fillStyle = "#30313a";
     ctx.font = "bold 13px 'Courier New', monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -374,8 +374,8 @@ function drawPowerUps() {
 // ------------------------------------------------------------
 function draw() {
   const background = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-  background.addColorStop(0, "#0b1020");
-  background.addColorStop(1, "#12091f");
+  background.addColorStop(0, "#242733");
+  background.addColorStop(1, "#20232d");
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -387,8 +387,8 @@ function draw() {
     HEIGHT * 0.15,
     WIDTH * 0.8
   );
-  glow.addColorStop(0, "rgba(71, 214, 255, 0.35)");
-  glow.addColorStop(1, "rgba(71, 214, 255, 0)");
+  glow.addColorStop(0, "rgba(145, 189, 193, 0.18)");
+  glow.addColorStop(1, "rgba(145, 189, 193, 0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -413,25 +413,25 @@ function draw() {
 
   if (levelBannerTime > 0 && !gameOver) {
     ctx.textAlign = "center";
-    ctx.shadowColor = "#7ef9ff";
+    ctx.shadowColor = "#a2c6c8";
     ctx.shadowBlur = 18;
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#e6e2e8";
     ctx.font = "bold 30px 'Courier New', monospace";
     ctx.fillText(`LEVEL ${level}`, WIDTH / 2, HEIGHT / 2);
     ctx.shadowBlur = 0;
   }
 
   if (gameOver) {
-    ctx.fillStyle = "rgba(5, 8, 22, 0.78)";
+    ctx.fillStyle = "rgba(20, 21, 29, 0.78)";
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
     ctx.textAlign = "center";
-    ctx.shadowColor = "#ff4fd8";
+    ctx.shadowColor = "#d6a0b4";
     ctx.shadowBlur = 20;
-    ctx.fillStyle = "#ff8be5";
+    ctx.fillStyle = "#d6a0b4";
     ctx.font = "bold 38px 'Courier New', monospace";
     ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2 - 28);
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "#f7f5ff";
+    ctx.fillStyle = "#dedbe2";
     ctx.font = "18px 'Courier New', monospace";
     ctx.fillText(`FINAL SCORE  ${score}`, WIDTH / 2, HEIGHT / 2 + 8);
     ctx.fillText("PRESS R TO RESTART", WIDTH / 2, HEIGHT / 2 + 42);
@@ -452,11 +452,11 @@ function drawSkyBeam() {
 
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.shadowColor = "#ff5f73";
+  ctx.shadowColor = "#ce8fa7";
   ctx.shadowBlur = isPulsing ? 18 : 30;
-  ctx.fillStyle = isPulsing ? "rgba(255, 95, 115, 0.55)" : "rgba(255, 95, 115, 0.8)";
+  ctx.fillStyle = isPulsing ? "rgba(206, 143, 167, 0.48)" : "rgba(206, 143, 167, 0.68)";
   ctx.fillRect(beamLeft, 0, beamWidth, paddle.y + paddle.height);
-  ctx.fillStyle = "rgba(255, 235, 240, 0.9)";
+  ctx.fillStyle = "rgba(238, 220, 225, 0.72)";
   ctx.fillRect(skyBeam.targetX - 1, 0, 2, paddle.y + paddle.height);
   ctx.restore();
 }

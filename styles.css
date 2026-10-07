@@ -9,10 +9,10 @@ body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(circle at top, rgba(255, 0, 153, 0.28), transparent 30%),
-    radial-gradient(circle at bottom, rgba(0, 255, 209, 0.18), transparent 25%),
-    linear-gradient(135deg, #050816 0%, #150b2d 35%, #070b18 100%);
-  color: #f7f5ff;
+    radial-gradient(circle at top, rgba(206, 143, 167, 0.12), transparent 30%),
+    radial-gradient(circle at bottom, rgba(145, 189, 193, 0.1), transparent 25%),
+    linear-gradient(135deg, #1b1d27 0%, #292631 35%, #20232d 100%);
+  color: #d6d3dc;
   font-family: "Courier New", monospace;
 }
 
@@ -31,15 +31,15 @@ main {
   position: relative;
   overflow: hidden;
   padding: 44px 28px 36px;
-  border: 2px solid rgba(126, 249, 255, 0.9);
+  border: 2px solid rgba(162, 198, 200, 0.48);
   border-radius: 24px;
   background:
-    radial-gradient(circle at 50% 38%, rgba(255, 79, 216, 0.2), transparent 42%),
-    linear-gradient(145deg, rgba(20, 24, 55, 0.96), rgba(9, 11, 29, 0.98));
+    radial-gradient(circle at 50% 38%, rgba(206, 143, 167, 0.1), transparent 42%),
+    linear-gradient(145deg, rgba(43, 43, 56, 0.96), rgba(31, 32, 43, 0.98));
   box-shadow:
-    0 0 0 4px rgba(255, 38, 161, 0.25),
-    0 0 34px rgba(20, 233, 255, 0.4),
-    0 0 70px rgba(255, 67, 166, 0.25);
+    0 0 0 3px rgba(206, 143, 167, 0.1),
+    0 0 28px rgba(145, 189, 193, 0.14),
+    0 0 54px rgba(206, 143, 167, 0.1);
 }
 
 .brick-showcase {
@@ -53,34 +53,34 @@ main {
 .brick-showcase span {
   width: 54px;
   height: 17px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(238, 232, 235, 0.48);
   border-radius: 5px;
-  box-shadow: 0 0 16px currentColor;
+  box-shadow: 0 0 10px currentColor;
 }
 
 .brick-showcase span:nth-child(1) {
-  color: #ff5fa2;
-  background: #ff5fa2;
+  color: #ce8fa7;
+  background: #ce8fa7;
 }
 
 .brick-showcase span:nth-child(2) {
-  color: #ffb703;
-  background: #ffb703;
+  color: #d0b17e;
+  background: #d0b17e;
 }
 
 .brick-showcase span:nth-child(3) {
-  color: #7ef9ff;
-  background: #7ef9ff;
+  color: #91bdc1;
+  background: #91bdc1;
 }
 
 .brick-showcase span:nth-child(4) {
-  color: #9bff6a;
-  background: #9bff6a;
+  color: #a7bd91;
+  background: #a7bd91;
 }
 
 .home-screen .eyebrow {
   margin: 0;
-  color: #7ef9ff;
+  color: #a2c6c8;
   font-size: 13px;
   font-weight: bold;
   letter-spacing: 0.28em;
@@ -89,21 +89,21 @@ main {
 
 .home-screen h1 {
   margin: 14px 0;
-  color: #fff;
+  color: #e6e2e8;
   font-size: clamp(48px, 12vw, 78px);
   line-height: 0.92;
-  letter-spacing: -0.08em;
-  text-shadow: 0 0 12px rgba(126, 249, 255, 0.6), 0 0 32px rgba(255, 79, 216, 0.55);
+  letter-spacing: 0;
+  text-shadow: 0 0 10px rgba(162, 198, 200, 0.22), 0 0 24px rgba(206, 143, 167, 0.18);
 }
 
 .home-screen h1 span {
-  color: #ff65d4;
+  color: #d6a0b4;
 }
 
 .home-screen .home-copy {
   max-width: 360px;
   margin: 20px auto 24px;
-  color: #d5dcff;
+  color: #c6c3ce;
   font-size: 15px;
   letter-spacing: 0.04em;
   line-height: 1.6;
@@ -114,11 +114,11 @@ main {
 .home-screen button {
   min-width: 210px;
   padding: 16px 26px;
-  border: 2px solid #b4fff6;
+  border: 2px solid #b8ceca;
   border-radius: 999px;
-  background: linear-gradient(100deg, #ff42bd, #7a5cff 55%, #21d9e8);
-  box-shadow: 0 0 18px rgba(255, 66, 189, 0.55), 0 0 32px rgba(33, 217, 232, 0.35);
-  color: #fff;
+  background: linear-gradient(100deg, #ba829c, #9188a7 55%, #7daeb0);
+  box-shadow: 0 0 16px rgba(186, 130, 156, 0.22), 0 0 28px rgba(125, 174, 176, 0.18);
+  color: #f0edf1;
   cursor: pointer;
   font: bold 18px "Courier New", monospace;
   letter-spacing: 0.12em;
@@ -133,17 +133,17 @@ main {
 .home-screen button:hover {
   transform: translateY(-3px) scale(1.04);
   filter: brightness(1.15);
-  box-shadow: 0 0 24px rgba(255, 66, 189, 0.8), 0 0 44px rgba(33, 217, 232, 0.55);
+  box-shadow: 0 0 20px rgba(186, 130, 156, 0.34), 0 0 36px rgba(125, 174, 176, 0.28);
 }
 
 .home-screen button:focus-visible {
-  outline: 3px solid #fff;
+  outline: 3px solid #d6d3dc;
   outline-offset: 5px;
 }
 
 .home-screen .home-hint {
   margin: 20px 0 0;
-  color: #9caddb;
+  color: #aaa8b5;
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -154,13 +154,13 @@ canvas {
   display: block;
   width: 100%;
   height: auto;
-  border: 3px solid rgba(122, 255, 234, 0.9);
+  border: 3px solid rgba(162, 198, 200, 0.5);
   border-radius: 16px;
-  background: linear-gradient(180deg, #0b1020 0%, #070d17 100%);
+  background: linear-gradient(180deg, #242733 0%, #20232d 100%);
   box-shadow:
-    0 0 0 3px rgba(255, 38, 161, 0.35),
-    0 0 30px rgba(20, 233, 255, 0.45),
-    0 0 60px rgba(255, 67, 166, 0.25);
+    0 0 0 3px rgba(206, 143, 167, 0.12),
+    0 0 28px rgba(145, 189, 193, 0.16),
+    0 0 48px rgba(206, 143, 167, 0.1);
 }
 
 .touch-controls {
@@ -173,11 +173,11 @@ canvas {
 .touch-controls button {
   width: 74px;
   height: 54px;
-  border: 1px solid rgba(126, 249, 255, 0.8);
+  border: 1px solid rgba(162, 198, 200, 0.48);
   border-radius: 14px;
-  background: linear-gradient(145deg, rgba(35, 46, 91, 0.95), rgba(22, 16, 53, 0.95));
-  box-shadow: 0 0 14px rgba(20, 233, 255, 0.22);
-  color: #7ef9ff;
+  background: linear-gradient(145deg, rgba(57, 62, 77, 0.95), rgba(48, 46, 61, 0.95));
+  box-shadow: 0 0 12px rgba(145, 189, 193, 0.12);
+  color: #a2c6c8;
   cursor: pointer;
   font: bold 28px "Courier New", monospace;
   touch-action: none;
@@ -185,13 +185,13 @@ canvas {
 }
 
 .touch-controls button:active {
-  background: linear-gradient(145deg, #ff42bd, #7a5cff);
-  color: #fff;
+  background: linear-gradient(145deg, #aa8299, #817b99);
+  color: #f0edf1;
   transform: scale(0.96);
 }
 
 .touch-controls button:focus-visible {
-  outline: 3px solid #fff;
+  outline: 3px solid #d6d3dc;
   outline-offset: 3px;
 }
 
@@ -201,7 +201,7 @@ canvas {
   justify-content: center;
   gap: 8px 18px;
   margin: 12px 0 0;
-  color: #c9d8ff;
+  color: #c2c0cb;
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -215,16 +215,16 @@ canvas {
   margin-right: 4px;
   place-items: center;
   border-radius: 50%;
-  background: #7ef9ff;
-  color: #101326;
+  background: #a2c6c8;
+  color: #30313a;
 }
 
 .powerup-legend span:nth-child(2) b {
-  background: #b995ff;
+  background: #aa9bbf;
 }
 
 .powerup-legend span:nth-child(3) b {
-  background: #ff6b9d;
+  background: #ce91a7;
 }
 
 p {
@@ -233,8 +233,8 @@ p {
   line-height: 1.5;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #c9d8ff;
-  text-shadow: 0 0 12px rgba(126, 249, 255, 0.5);
+  color: #c2c0cb;
+  text-shadow: 0 0 10px rgba(162, 198, 200, 0.16);
 }
 
 @media (max-width: 480px) {

@@ -9,10 +9,10 @@ const BRICK_HEIGHT = 20;
 const BRICK_GAP = 6;     // empty space between bricks
 const BRICKS_TOP = 50;   // how far down the first row starts
 const BRICK_COLORS = [
-  "#ff5fa2",
-  "#ffb703",
-  "#7ef9ff",
-  "#9bff6a"
+  "#ce8fa7",
+  "#d0b17e",
+  "#91bdc1",
+  "#a7bd91"
 ];
 
 // Builds the list of bricks. Each brick is an object with an
@@ -63,11 +63,11 @@ function drawBricks() {
     ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
 
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.strokeStyle = "rgba(238, 232, 235, 0.48)";
     ctx.lineWidth = 1.5;
     ctx.strokeRect(brick.x + 1, brick.y + 1, brick.width - 2, brick.height - 2);
     if (brick.hits > 1) {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.fillStyle = "rgba(238, 232, 235, 0.72)";
       ctx.fillRect(brick.x + brick.width / 2 - 4, brick.y + brick.height / 2 - 2, 8, 4);
     }
   }
