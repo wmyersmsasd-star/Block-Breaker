@@ -67,6 +67,14 @@ const STARTING_LIVES = 3;
 let lives = STARTING_LIVES;
 let gameOver = false;
 let hasStarted = false;
+const SKY_BEAM_PERIOD = 2;
+const SKY_BEAM_PULSE_DURATION = 1;
+const SKY_BEAM_WIDTH = 10;
+const skyBeam = {
+  elapsed: 0,
+  targetX: paddle.x + paddle.width / 2,
+  hasFired: false
+};
 let score = 0;
 let level = 1;
 let particles = [];
@@ -123,6 +131,7 @@ function update() {
   }
 
   movePaddle();
+  updateSkyBeam();
   moveBall();
 
   bounceOffWalls();   // collisions.js
@@ -144,7 +153,7 @@ function update() {
   levelBannerTime = Math.max(0, levelBannerTime - STEP / 1000);
 
   // Losing a ball costs one life, but leaves the remaining bricks intact.
-  if (ball.y > HEIGHT) {
+  if (ball.y > HEIGHT && !gameOver) {
     lives = lives - 1;
     paddle.x = WIDTH / 2 - paddle.width / 2;
     if (lives === 0) {
@@ -167,7 +176,35 @@ function restartGame() {
   paddle.width = 90;
   bricks = makeBricks();
   paddle.x = WIDTH / 2 - paddle.width / 2;
+  skyBeam.elapsed = 0;
+  skyBeam.targetX = paddle.x + paddle.width / 2;
+  skyBeam.hasFired = false;
   resetBall();
+}
+
+function updateSkyBeam() {
+  const previousElapsed = skyBeam.elapsed;
+  skyBeam.elapsed += STEP / 1000;
+
+  if (!skyBeam.hasFired
+      && previousElapsed < SKY_BEAM_PULSE_DURATION
+      && skyBeam.elapsed >= SKY_BEAM_PULSE_DURATION) {
+    skyBeam.hasFired = true;
+    const beamLeft = skyBeam.targetX - SKY_BEAM_WIDTH / 2;
+    const beamRight = skyBeam.targetX + SKY_BEAM_WIDTH / 2;
+    if (beamLeft < paddle.x + paddle.width && beamRight > paddle.x) {
+      lives -= 1;
+      if (lives <= 0) {
+        gameOver = true;
+      }
+    }
+  }
+
+  if (skyBeam.elapsed >= SKY_BEAM_PERIOD) {
+    skyBeam.elapsed -= SKY_BEAM_PERIOD;
+    skyBeam.targetX = paddle.x + paddle.width / 2;
+    skyBeam.hasFired = false;
+  }
 }
 
 function startGame() {
@@ -355,6 +392,8 @@ function draw() {
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
+  drawSkyBeam();
+
   ctx.shadowColor = paddle.color;
   ctx.shadowBlur = 18;
   ctx.fillStyle = paddle.color;
@@ -397,6 +436,29 @@ function draw() {
     ctx.fillText(`FINAL SCORE  ${score}`, WIDTH / 2, HEIGHT / 2 + 8);
     ctx.fillText("PRESS R TO RESTART", WIDTH / 2, HEIGHT / 2 + 42);
   }
+}
+
+function drawSkyBeam() {
+  const isPulsing = skyBeam.elapsed < SKY_BEAM_PULSE_DURATION;
+  const fadeProgress = isPulsing
+    ? 1
+    : 1 - (skyBeam.elapsed - SKY_BEAM_PULSE_DURATION) / SKY_BEAM_PULSE_DURATION;
+  const pulse = isPulsing
+    ? 0.3 + (Math.sin(skyBeam.elapsed * Math.PI * 8) + 1) * 0.22
+    : 0;
+  const alpha = Math.max(0, isPulsing ? pulse : fadeProgress);
+  const beamWidth = isPulsing ? SKY_BEAM_WIDTH * 0.65 : SKY_BEAM_WIDTH;
+  const beamLeft = skyBeam.targetX - beamWidth / 2;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.shadowColor = "#ff5f73";
+  ctx.shadowBlur = isPulsing ? 18 : 30;
+  ctx.fillStyle = isPulsing ? "rgba(255, 95, 115, 0.55)" : "rgba(255, 95, 115, 0.8)";
+  ctx.fillRect(beamLeft, 0, beamWidth, paddle.y + paddle.height);
+  ctx.fillStyle = "rgba(255, 235, 240, 0.9)";
+  ctx.fillRect(skyBeam.targetX - 1, 0, 2, paddle.y + paddle.height);
+  ctx.restore();
 }
 
 function drawHud() {
