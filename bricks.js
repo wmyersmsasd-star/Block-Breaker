@@ -9,10 +9,14 @@ const BRICK_HEIGHT = 20;
 const BRICK_GAP = 6;     // empty space between bricks
 const BRICKS_TOP = 50;   // how far down the first row starts
 const BRICK_COLORS = [
-  "#ce8fa7",
-  "#d0b17e",
-  "#91bdc1",
-  "#a7bd91"
+  "#ff4d8d",
+  "#ffb703",
+  "#4ecdc4",
+  "#7bdff2",
+  "#9b5de5",
+  "#7cf29a",
+  "#ff7b54",
+  "#ffd166"
 ];
 
 // Builds the list of bricks. Each brick is an object with an

@@ -9,10 +9,10 @@ body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(circle at top, rgba(206, 143, 167, 0.12), transparent 30%),
-    radial-gradient(circle at bottom, rgba(145, 189, 193, 0.1), transparent 25%),
-    linear-gradient(135deg, #1b1d27 0%, #292631 35%, #20232d 100%);
-  color: #d6d3dc;
+    radial-gradient(circle at top, rgba(255, 77, 141, 0.22), transparent 28%),
+    radial-gradient(circle at bottom, rgba(75, 210, 255, 0.18), transparent 30%),
+    linear-gradient(135deg, #0f172a 0%, #1a1630 35%, #120f1d 100%);
+  color: #edf6ff;
   font-family: "Courier New", monospace;
 }
 
@@ -31,15 +31,15 @@ main {
   position: relative;
   overflow: hidden;
   padding: 44px 28px 36px;
-  border: 2px solid rgba(162, 198, 200, 0.48);
+  border: 2px solid rgba(102, 224, 255, 0.65);
   border-radius: 24px;
   background:
-    radial-gradient(circle at 50% 38%, rgba(206, 143, 167, 0.1), transparent 42%),
-    linear-gradient(145deg, rgba(43, 43, 56, 0.96), rgba(31, 32, 43, 0.98));
+    radial-gradient(circle at 50% 38%, rgba(255, 77, 141, 0.18), transparent 38%),
+    linear-gradient(145deg, rgba(24, 28, 48, 0.98), rgba(17, 20, 33, 0.98));
   box-shadow:
-    0 0 0 3px rgba(206, 143, 167, 0.1),
-    0 0 28px rgba(145, 189, 193, 0.14),
-    0 0 54px rgba(206, 143, 167, 0.1);
+    0 0 0 3px rgba(75, 210, 255, 0.18),
+    0 0 28px rgba(75, 210, 255, 0.18),
+    0 0 54px rgba(255, 77, 141, 0.12);
 }
 
 .brick-showcase {
@@ -59,23 +59,23 @@ main {
 }
 
 .brick-showcase span:nth-child(1) {
-  color: #ce8fa7;
-  background: #ce8fa7;
+  color: #ff4d8d;
+  background: #ff4d8d;
 }
 
 .brick-showcase span:nth-child(2) {
-  color: #d0b17e;
-  background: #d0b17e;
+  color: #ffb703;
+  background: #ffb703;
 }
 
 .brick-showcase span:nth-child(3) {
-  color: #91bdc1;
-  background: #91bdc1;
+  color: #4ecdc4;
+  background: #4ecdc4;
 }
 
 .brick-showcase span:nth-child(4) {
-  color: #a7bd91;
-  background: #a7bd91;
+  color: #7bdff2;
+  background: #7bdff2;
 }
 
 .home-screen .eyebrow {
@@ -114,11 +114,11 @@ main {
 .home-screen button {
   min-width: 210px;
   padding: 16px 26px;
-  border: 2px solid #b8ceca;
+  border: 2px solid rgba(139, 236, 255, 0.9);
   border-radius: 999px;
-  background: linear-gradient(100deg, #ba829c, #9188a7 55%, #7daeb0);
-  box-shadow: 0 0 16px rgba(186, 130, 156, 0.22), 0 0 28px rgba(125, 174, 176, 0.18);
-  color: #f0edf1;
+  background: linear-gradient(100deg, #ff4d8d, #9b5de5 52%, #00d9ff);
+  box-shadow: 0 0 18px rgba(255, 77, 141, 0.28), 0 0 30px rgba(0, 217, 255, 0.24);
+  color: #f8faff;
   cursor: pointer;
   font: bold 18px "Courier New", monospace;
   letter-spacing: 0.12em;
@@ -173,11 +173,11 @@ canvas {
 .touch-controls button {
   width: 74px;
   height: 54px;
-  border: 1px solid rgba(162, 198, 200, 0.48);
+  border: 1px solid rgba(75, 210, 255, 0.58);
   border-radius: 14px;
-  background: linear-gradient(145deg, rgba(57, 62, 77, 0.95), rgba(48, 46, 61, 0.95));
-  box-shadow: 0 0 12px rgba(145, 189, 193, 0.12);
-  color: #a2c6c8;
+  background: linear-gradient(145deg, rgba(39, 50, 80, 0.95), rgba(20, 25, 38, 0.95));
+  box-shadow: 0 0 12px rgba(75, 210, 255, 0.18);
+  color: #7bdff2;
   cursor: pointer;
   font: bold 28px "Courier New", monospace;
   touch-action: none;
@@ -185,8 +185,8 @@ canvas {
 }
 
 .touch-controls button:active {
-  background: linear-gradient(145deg, #aa8299, #817b99);
-  color: #f0edf1;
+  background: linear-gradient(145deg, #ff4d8d, #7b5cf4);
+  color: #f8faff;
   transform: scale(0.96);
 }
 
@@ -215,16 +215,16 @@ canvas {
   margin-right: 4px;
   place-items: center;
   border-radius: 50%;
-  background: #a2c6c8;
-  color: #30313a;
+  background: #4ecdc4;
+  color: #10182b;
 }
 
 .powerup-legend span:nth-child(2) b {
-  background: #aa9bbf;
+  background: #9b5de5;
 }
 
 .powerup-legend span:nth-child(3) b {
-  background: #ce91a7;
+  background: #ff4d8d;
 }
 
 p {

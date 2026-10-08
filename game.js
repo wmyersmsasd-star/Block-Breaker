@@ -33,7 +33,7 @@ const ball = {
   height: 12,
   vx: 0,
   vy: 0,
-  color: "#d6a0b4"
+  color: "#ff5ea8"
 };
 let ballSpeed = BALL_SPEED;
 
@@ -55,7 +55,7 @@ const paddle = {
   width: 90,
   height: 12,
   speed: 6,
-  color: "#a2c6c8"
+  color: "#4de0ff"
 };
 
 
@@ -347,7 +347,7 @@ function moveBall() {
 }
 
 function drawPowerUps() {
-  const colors = { wide: "#a2c6c8", slow: "#aa9bbf", life: "#ce91a7" };
+  const colors = { wide: "#4ecdc4", slow: "#9b5de5", life: "#ff4d8d" };
   const labels = { wide: "W", slow: "S", life: "+" };
   for (const powerUp of powerUps) {
     const color = colors[powerUp.type];
@@ -374,8 +374,9 @@ function drawPowerUps() {
 // ------------------------------------------------------------
 function draw() {
   const background = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-  background.addColorStop(0, "#242733");
-  background.addColorStop(1, "#20232d");
+  background.addColorStop(0, "#111827");
+  background.addColorStop(0.5, "#1b1630");
+  background.addColorStop(1, "#0d1326");
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -387,8 +388,9 @@ function draw() {
     HEIGHT * 0.15,
     WIDTH * 0.8
   );
-  glow.addColorStop(0, "rgba(145, 189, 193, 0.18)");
-  glow.addColorStop(1, "rgba(145, 189, 193, 0)");
+  glow.addColorStop(0, "rgba(255, 77, 141, 0.18)");
+  glow.addColorStop(0.4, "rgba(75, 210, 255, 0.14)");
+  glow.addColorStop(1, "rgba(75, 210, 255, 0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -413,25 +415,25 @@ function draw() {
 
   if (levelBannerTime > 0 && !gameOver) {
     ctx.textAlign = "center";
-    ctx.shadowColor = "#a2c6c8";
+    ctx.shadowColor = "#4de0ff";
     ctx.shadowBlur = 18;
-    ctx.fillStyle = "#e6e2e8";
+    ctx.fillStyle = "#f6fbff";
     ctx.font = "bold 30px 'Courier New', monospace";
     ctx.fillText(`LEVEL ${level}`, WIDTH / 2, HEIGHT / 2);
     ctx.shadowBlur = 0;
   }
 
   if (gameOver) {
-    ctx.fillStyle = "rgba(20, 21, 29, 0.78)";
+    ctx.fillStyle = "rgba(11, 14, 24, 0.8)";
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
     ctx.textAlign = "center";
-    ctx.shadowColor = "#d6a0b4";
+    ctx.shadowColor = "#ff5ea8";
     ctx.shadowBlur = 20;
-    ctx.fillStyle = "#d6a0b4";
+    ctx.fillStyle = "#ff5ea8";
     ctx.font = "bold 38px 'Courier New', monospace";
     ctx.fillText("GAME OVER", WIDTH / 2, HEIGHT / 2 - 28);
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "#dedbe2";
+    ctx.fillStyle = "#edf6ff";
     ctx.font = "18px 'Courier New', monospace";
     ctx.fillText(`FINAL SCORE  ${score}`, WIDTH / 2, HEIGHT / 2 + 8);
     ctx.fillText("PRESS R TO RESTART", WIDTH / 2, HEIGHT / 2 + 42);
@@ -452,11 +454,11 @@ function drawSkyBeam() {
 
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.shadowColor = "#ce8fa7";
+  ctx.shadowColor = "#ff4d8d";
   ctx.shadowBlur = isPulsing ? 18 : 30;
-  ctx.fillStyle = isPulsing ? "rgba(206, 143, 167, 0.48)" : "rgba(206, 143, 167, 0.68)";
+  ctx.fillStyle = isPulsing ? "rgba(255, 77, 141, 0.52)" : "rgba(255, 77, 141, 0.7)";
   ctx.fillRect(beamLeft, 0, beamWidth, paddle.y + paddle.height);
-  ctx.fillStyle = "rgba(238, 220, 225, 0.72)";
+  ctx.fillStyle = "rgba(255, 221, 234, 0.8)";
   ctx.fillRect(skyBeam.targetX - 1, 0, 2, paddle.y + paddle.height);
   ctx.restore();
 }
