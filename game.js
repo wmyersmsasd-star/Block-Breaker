@@ -72,9 +72,13 @@ const SKY_BEAM_PULSE_DURATION = 1;
 const SKY_BEAM_WIDTH = 10;
 const skyBeam = {
   elapsed: 0,
-  targetX: paddle.x + paddle.width / 2,
+  targetX: WIDTH / 2,
   hasFired: false
 };
+
+function randomizeSkyBeamTarget() {
+  skyBeam.targetX = 20 + Math.random() * (WIDTH - 40);
+}
 let score = 0;
 let level = 1;
 let particles = [];
@@ -177,12 +181,18 @@ function restartGame() {
   bricks = makeBricks();
   paddle.x = WIDTH / 2 - paddle.width / 2;
   skyBeam.elapsed = 0;
-  skyBeam.targetX = paddle.x + paddle.width / 2;
+  skyBeam.targetX = WIDTH / 2;
   skyBeam.hasFired = false;
   resetBall();
 }
 
 function updateSkyBeam() {
+  if (level < 3) {
+    skyBeam.elapsed = 0;
+    skyBeam.hasFired = false;
+    return;
+  }
+
   const previousElapsed = skyBeam.elapsed;
   skyBeam.elapsed += STEP / 1000;
 
@@ -202,7 +212,7 @@ function updateSkyBeam() {
 
   if (skyBeam.elapsed >= SKY_BEAM_PERIOD) {
     skyBeam.elapsed -= SKY_BEAM_PERIOD;
-    skyBeam.targetX = paddle.x + paddle.width / 2;
+    randomizeSkyBeamTarget();
     skyBeam.hasFired = false;
   }
 }
@@ -220,6 +230,11 @@ function advanceLevel() {
   bricks = makeBricks(level);
   powerUps = [];
   paddle.x = WIDTH / 2 - paddle.width / 2;
+  if (level >= 3) {
+    skyBeam.elapsed = 0;
+    randomizeSkyBeamTarget();
+    skyBeam.hasFired = false;
+  }
   resetBall();
   levelBannerTime = 1.8;
 }
@@ -441,6 +456,10 @@ function draw() {
 }
 
 function drawSkyBeam() {
+  if (level < 3) {
+    return;
+  }
+
   const isPulsing = skyBeam.elapsed < SKY_BEAM_PULSE_DURATION;
   const fadeProgress = isPulsing
     ? 1
