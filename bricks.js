@@ -78,6 +78,21 @@ function drawBricks() {
     ctx.stroke();
     ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
     ctx.fillRect(brick.x + 8, brick.y + 4, brick.width - 16, 1);
+      if (brick.hits === 1) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(brick.x + brick.width * 0.54, brick.y + 2);
+        ctx.lineTo(brick.x + brick.width * 0.43, brick.y + brick.height * 0.36);
+        ctx.lineTo(brick.x + brick.width * 0.59, brick.y + brick.height * 0.57);
+        ctx.lineTo(brick.x + brick.width * 0.45, brick.y + brick.height - 2);
+        ctx.moveTo(brick.x + brick.width * 0.45, brick.y + brick.height * 0.57);
+        ctx.lineTo(brick.x + brick.width * 0.27, brick.y + brick.height * 0.43);
+        ctx.strokeStyle = "rgba(8, 16, 23, 0.88)";
+        ctx.lineWidth = 2;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+        ctx.restore();
+      }
     if (brick.hits > 1) {
       ctx.fillStyle = "rgba(255, 255, 255, 0.76)";
       for (let hit = 0; hit < brick.hits; hit++) {
