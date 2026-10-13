@@ -24,7 +24,7 @@ const HEIGHT = canvas.height; // 450
 // A positive vy means the ball is moving DOWN the screen.
 // ------------------------------------------------------------
 const BALL_SPEED = 4;
-const MAX_BALL_SPEED = 8;
+const MAX_BALL_SPEED = 6.5;
 
 const ball = {
   x: 0,
@@ -39,10 +39,11 @@ let ballSpeed = BALL_SPEED;
 
 // Put the ball in the center and reset its speed and direction.
 function resetBall() {
-  ball.x = WIDTH / 2 - ball.width / 2;
-  ball.y = HEIGHT / 2 - ball.height / 2;
+  ball.x = paddle.x + paddle.width / 2 - ball.width / 2;
+  ball.y = paddle.y - ball.height - 2;
   ball.vx = 0;
-  ball.vy = ballSpeed * (activeEffects.slow > 0 ? 0.72 : 1);  // straight down
+  ball.vy = 0;
+  isServing = true;
 }
 
 
@@ -67,8 +68,10 @@ const STARTING_LIVES = 3;
 let lives = STARTING_LIVES;
 let gameOver = false;
 let hasStarted = false;
-const SKY_BEAM_PERIOD = 2;
-const SKY_BEAM_PULSE_DURATION = 1;
+let isServing = true;
+let combo = 0;
+const SKY_BEAM_PERIOD = 3.4;
+const SKY_BEAM_PULSE_DURATION = 1.4;
 const SKY_BEAM_WIDTH = 10;
 const skyBeam = {
   elapsed: 0,
@@ -96,6 +99,10 @@ const keys = {};
 document.addEventListener("keydown", function (event) {
   const key = event.key.toLowerCase();
   keys[key] = true;
+  if ((key === " " || key === "enter") && hasStarted && !gameOver) {
+    event.preventDefault();
+    launchBall();
+  }
   if (key === "r" && gameOver) {
     restartGame();
   }
@@ -110,6 +117,7 @@ document.addEventListener("keyup", function (event) {
 });
 
 playButton.addEventListener("click", startGame);
+canvas.addEventListener("pointerdown", launchBall);
 for (const button of touchButtons) {
   const key = button.dataset.key;
   button.addEventListener("pointerdown", function (event) {
@@ -135,6 +143,15 @@ function update() {
   }
 
   movePaddle();
+  if (isServing) {
+    ball.x = paddle.x + paddle.width / 2 - ball.width / 2;
+    updateParticles();
+    updatePowerUps();
+    updateEffects();
+    levelBannerTime = Math.max(0, levelBannerTime - STEP / 1000);
+    return;
+  }
+
   updateSkyBeam();
   moveBall();
 
@@ -142,7 +159,9 @@ function update() {
   bounceOffPaddle();  // collisions.js
   const brickHit = bounceOffBricks();  // collisions.js
   if (brickHit) {
-    score += brickHit.destroyed ? 100 : 25;
+    combo += 1;
+    const multiplier = 1 + Math.floor(combo / 4) * 0.25;
+    score += Math.round((brickHit.destroyed ? 100 : 25) * multiplier);
     burstParticles(brickHit.brick);
     if (brickHit.destroyed) {
       maybeDropPowerUp(brickHit.brick);
@@ -159,6 +178,7 @@ function update() {
   // Losing a ball costs one life, but leaves the remaining bricks intact.
   if (ball.y > HEIGHT && !gameOver) {
     lives = lives - 1;
+    combo = 0;
     paddle.x = WIDTH / 2 - paddle.width / 2;
     if (lives === 0) {
       gameOver = true;
@@ -172,6 +192,7 @@ function restartGame() {
   lives = STARTING_LIVES;
   gameOver = false;
   score = 0;
+  combo = 0;
   level = 1;
   ballSpeed = BALL_SPEED;
   particles = [];
@@ -222,6 +243,16 @@ function startGame() {
   hasStarted = true;
   homeScreen.hidden = true;
   gameView.hidden = false;
+}
+
+function launchBall() {
+  if (!hasStarted || gameOver || !isServing) {
+    return;
+  }
+  const speed = ballSpeed * (activeEffects.slow > 0 ? 0.72 : 1);
+  ball.vx = speed * 0.28;
+  ball.vy = -speed * Math.sqrt(1 - 0.28 ** 2);
+  isServing = false;
 }
 
 function advanceLevel() {
@@ -354,6 +385,9 @@ function movePaddle() {
   if (paddle.x + paddle.width > WIDTH) {
     paddle.x = WIDTH - paddle.width;
   }
+  if (isServing) {
+    ball.x = paddle.x + paddle.width / 2 - ball.width / 2;
+  }
 }
 
 function moveBall() {
@@ -409,17 +443,22 @@ function draw() {
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
+  drawCourt();
   drawSkyBeam();
 
   ctx.shadowColor = paddle.color;
   ctx.shadowBlur = 18;
   ctx.fillStyle = paddle.color;
-  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+  roundedRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
+  roundedRect(paddle.x + paddle.width * 0.2, paddle.y + 2, paddle.width * 0.6, 2, 1);
 
   ctx.shadowColor = ball.color;
   ctx.shadowBlur = 18;
   ctx.fillStyle = ball.color;
-  ctx.fillRect(ball.x, ball.y, ball.width, ball.height);
+  ctx.beginPath();
+  ctx.arc(ball.x + ball.width / 2, ball.y + ball.height / 2, ball.width / 2, 0, Math.PI * 2);
+  ctx.fill();
   ctx.shadowBlur = 0;
 
   drawBricks();  // bricks.js
@@ -436,6 +475,13 @@ function draw() {
     ctx.font = "bold 30px 'Courier New', monospace";
     ctx.fillText(`LEVEL ${level}`, WIDTH / 2, HEIGHT / 2);
     ctx.shadowBlur = 0;
+  }
+
+  if (isServing && hasStarted && !gameOver) {
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(237, 246, 255, 0.78)";
+    ctx.font = "bold 13px 'Courier New', monospace";
+    ctx.fillText("PRESS SPACE OR TAP TO LAUNCH", WIDTH / 2, HEIGHT - 48);
   }
 
   if (gameOver) {
@@ -490,7 +536,7 @@ function drawHud() {
   ctx.fillText(`SCORE ${String(score).padStart(5, "0")}`, 16, 28);
   ctx.textAlign = "center";
   ctx.fillStyle = "#a2c6c8";
-  ctx.fillText(`LEVEL ${level}`, WIDTH / 2, 28);
+  ctx.fillText(`LEVEL ${level}  ·  x${(1 + Math.floor(combo / 4) * 0.25).toFixed(2)}`, WIDTH / 2, 28);
   ctx.textAlign = "right";
   ctx.fillStyle = "#d6a0b4";
   ctx.fillText(`LIVES ${"\u2665 ".repeat(lives).trim()}`, WIDTH - 16, 28);
@@ -503,6 +549,36 @@ function drawHud() {
     if (activeEffects.slow > 0) effects.push(`SLOW ${Math.ceil(activeEffects.slow)}s`);
     ctx.fillText(effects.join("  "), WIDTH / 2, HEIGHT - 12);
   }
+}
+
+function drawCourt() {
+  ctx.save();
+  ctx.strokeStyle = "rgba(171, 205, 224, 0.055)";
+  ctx.lineWidth = 1;
+  for (let x = 24; x < WIDTH; x += 24) {
+    ctx.beginPath();
+    ctx.moveTo(x, 42);
+    ctx.lineTo(x, HEIGHT);
+    ctx.stroke();
+  }
+  for (let y = 54; y < HEIGHT; y += 24) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(WIDTH, y);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "rgba(123, 223, 242, 0.22)";
+  ctx.beginPath();
+  ctx.moveTo(0, 42);
+  ctx.lineTo(WIDTH, 42);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function roundedRect(x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, radius);
+  ctx.fill();
 }
 
 function drawParticles() {

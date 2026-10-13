@@ -61,18 +61,30 @@ function makeBricks(level = 1) {
 // Draws every brick in the list.
 function drawBricks() {
   for (const brick of bricks) {
+    const gradient = ctx.createLinearGradient(brick.x, brick.y, brick.x, brick.y + brick.height);
+    gradient.addColorStop(0, brick.color);
+    gradient.addColorStop(1, "rgba(10, 16, 27, 0.72)");
+
     ctx.shadowColor = brick.color;
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = brick.color;
-    ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+    ctx.shadowBlur = 9;
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.roundRect(brick.x, brick.y, brick.width, brick.height, 5);
+    ctx.fill();
 
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = "rgba(238, 232, 235, 0.48)";
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(brick.x + 1, brick.y + 1, brick.width - 2, brick.height - 2);
+    ctx.strokeStyle = "rgba(238, 246, 255, 0.42)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.fillRect(brick.x + 8, brick.y + 4, brick.width - 16, 1);
     if (brick.hits > 1) {
-      ctx.fillStyle = "rgba(238, 232, 235, 0.72)";
-      ctx.fillRect(brick.x + brick.width / 2 - 4, brick.y + brick.height / 2 - 2, 8, 4);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.76)";
+      for (let hit = 0; hit < brick.hits; hit++) {
+        ctx.beginPath();
+        ctx.arc(brick.x + brick.width / 2 - (brick.hits - 1) * 4 + hit * 8, brick.y + brick.height / 2, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 }
