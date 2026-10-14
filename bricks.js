@@ -61,38 +61,71 @@ function makeBricks(level = 1) {
 // Draws every brick in the list.
 function drawBricks() {
   for (const brick of bricks) {
-    const gradient = ctx.createLinearGradient(brick.x, brick.y, brick.x, brick.y + brick.height);
-    gradient.addColorStop(0, brick.color);
-    gradient.addColorStop(1, "rgba(10, 16, 27, 0.72)");
+    const { x, y, width, height } = brick;
+    const bevel = 3;
+    const gradient = ctx.createLinearGradient(x, y, x, y + height);
+    gradient.addColorStop(0, "#ffffff");
+    gradient.addColorStop(0.12, brick.color);
+    gradient.addColorStop(1, "rgba(10, 16, 27, 0.78)");
+
+    ctx.beginPath();
+    ctx.moveTo(x + bevel, y);
+    ctx.lineTo(x + width - bevel, y);
+    ctx.lineTo(x + width, y + bevel);
+    ctx.lineTo(x + width, y + height - bevel);
+    ctx.lineTo(x + width - bevel, y + height);
+    ctx.lineTo(x + bevel, y + height);
+    ctx.lineTo(x, y + height - bevel);
+    ctx.lineTo(x, y + bevel);
+    ctx.closePath();
 
     ctx.shadowColor = brick.color;
     ctx.shadowBlur = 9;
     ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.roundRect(brick.x, brick.y, brick.width, brick.height, 5);
     ctx.fill();
-
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = "rgba(238, 246, 255, 0.42)";
+
+    ctx.strokeStyle = "rgba(255, 239, 220, 0.68)";
     ctx.lineWidth = 1;
     ctx.stroke();
-    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-    ctx.fillRect(brick.x + 8, brick.y + 4, brick.width - 16, 1);
-      if (brick.hits === 1) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(brick.x + brick.width * 0.54, brick.y + 2);
-        ctx.lineTo(brick.x + brick.width * 0.43, brick.y + brick.height * 0.36);
-        ctx.lineTo(brick.x + brick.width * 0.59, brick.y + brick.height * 0.57);
-        ctx.lineTo(brick.x + brick.width * 0.45, brick.y + brick.height - 2);
-        ctx.moveTo(brick.x + brick.width * 0.45, brick.y + brick.height * 0.57);
-        ctx.lineTo(brick.x + brick.width * 0.27, brick.y + brick.height * 0.43);
-        ctx.strokeStyle = "rgba(8, 16, 23, 0.88)";
-        ctx.lineWidth = 2;
-        ctx.lineJoin = "round";
-        ctx.stroke();
-        ctx.restore();
-      }
+
+    ctx.beginPath();
+    ctx.moveTo(x + 5, y + 3);
+    ctx.lineTo(x + width - 5, y + 3);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.38)";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + 4, y + height - 2);
+    ctx.lineTo(x + width - 4, y + height - 2);
+    ctx.strokeStyle = "rgba(10, 16, 27, 0.4)";
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255, 239, 220, 0.28)";
+    ctx.fillRect(x + 9, y + 7, 3, 1);
+    ctx.fillRect(x + width - 15, y + height - 6, 4, 1);
+
+    if (brick.hits === 1) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x + width * 0.54, y + 2);
+      ctx.lineTo(x + width * 0.47, y + height * 0.3);
+      ctx.lineTo(x + width * 0.58, y + height * 0.48);
+      ctx.lineTo(x + width * 0.43, y + height * 0.68);
+      ctx.lineTo(x + width * 0.5, y + height - 2);
+      ctx.moveTo(x + width * 0.47, y + height * 0.3);
+      ctx.lineTo(x + width * 0.32, y + height * 0.42);
+      ctx.moveTo(x + width * 0.58, y + height * 0.48);
+      ctx.lineTo(x + width * 0.72, y + height * 0.38);
+      ctx.strokeStyle = "rgba(28, 18, 20, 0.9)";
+      ctx.lineWidth = 2;
+      ctx.lineJoin = "bevel";
+      ctx.stroke();
+      ctx.translate(-1, -1);
+      ctx.strokeStyle = "rgba(255, 239, 220, 0.72)";
+      ctx.lineWidth = 0.75;
+      ctx.stroke();
+      ctx.restore();
+    }
     if (brick.hits > 1) {
       ctx.fillStyle = "rgba(255, 255, 255, 0.76)";
       for (let hit = 0; hit < brick.hits; hit++) {
