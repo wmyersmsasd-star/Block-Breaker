@@ -5,11 +5,11 @@
 :root {
   color-scheme: dark;
   --ink: #edf6ff;
-  --muted: #a9bac4;
+  --muted: #b2bfd7;
   --coral: #ff8065;
-  --mint: #3fd1c3;
-  --gold: #ffd166;
-  --line: rgba(123, 223, 242, 0.32);
+  --mint: #6bf0d3;
+  --gold: #ffda8b;
+  --line: rgba(131, 198, 255, 0.42);
 }
 
 body {
@@ -21,10 +21,13 @@ body {
   justify-content: center;
   padding: 24px 0;
   background:
-    radial-gradient(ellipse at 12% 8%, rgba(255, 128, 101, 0.14), transparent 35%),
-    radial-gradient(ellipse at 92% 88%, rgba(63, 209, 195, 0.12), transparent 34%),
+    radial-gradient(ellipse at 14% 18%, rgba(50, 138, 190, 0.2), transparent 38%),
+    radial-gradient(ellipse at 84% 76%, rgba(34, 170, 147, 0.14), transparent 36%),
+    radial-gradient(circle, rgba(222, 239, 255, 0.44) 0.7px, transparent 1px) 0 0 / 83px 83px,
+    radial-gradient(circle, rgba(255, 218, 139, 0.28) 0.6px, transparent 1px) 39px 27px / 137px 137px,
     repeating-linear-gradient(0deg, rgba(178, 220, 228, 0.018) 0 1px, transparent 1px 5px),
-    linear-gradient(135deg, #08131a 0%, #102029 52%, #11181d 100%);
+    linear-gradient(135deg, #070b1b 0%, #0c1830 52%, #07151d 100%);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: "Courier New", monospace;
 }
@@ -48,12 +51,14 @@ main {
   border: 1px solid var(--line);
   border-radius: 8px;
   background:
-    radial-gradient(ellipse at 50% 36%, rgba(255, 128, 101, 0.14), transparent 44%),
-    linear-gradient(145deg, rgba(19, 36, 43, 0.98), rgba(10, 19, 25, 0.98));
+    radial-gradient(ellipse at 52% 28%, rgba(45, 138, 183, 0.2), transparent 46%),
+    radial-gradient(ellipse at 86% 92%, rgba(38, 173, 145, 0.12), transparent 38%),
+    repeating-linear-gradient(128deg, transparent 0 34px, rgba(135, 194, 255, 0.025) 35px 36px, transparent 37px 72px),
+    linear-gradient(145deg, rgba(13, 23, 43, 0.98), rgba(8, 17, 29, 0.98));
   box-shadow:
-    0 0 0 1px rgba(255, 209, 102, 0.12),
+    0 0 0 1px rgba(112, 207, 255, 0.15),
     0 24px 80px rgba(0, 0, 0, 0.32),
-    0 0 52px rgba(63, 209, 195, 0.08);
+    0 0 52px rgba(71, 189, 225, 0.12);
   animation: arrive 520ms ease-out both;
 }
 
@@ -114,7 +119,7 @@ main {
   font-size: 76px;
   line-height: 0.92;
   letter-spacing: 0;
-  text-shadow: 0 0 10px rgba(162, 198, 200, 0.22), 0 0 34px rgba(255, 128, 101, 0.2);
+  text-shadow: 0 0 10px rgba(162, 198, 200, 0.22), 0 0 34px rgba(255, 128, 101, 0.2), 0 0 58px rgba(91, 199, 255, 0.12);
 }
 
 .home-screen h1 span {
@@ -181,7 +186,7 @@ main {
   justify-content: space-between;
   gap: 16px;
   margin: 0 2px 12px;
-  color: #d5e4df;
+  color: #dbe9ff;
   font-size: 12px;
   font-weight: bold;
   letter-spacing: 0.12em;
@@ -199,7 +204,7 @@ main {
   width: 30px;
   height: 26px;
   place-items: center;
-  border: 1px solid rgba(255, 209, 102, 0.62);
+  border: 1px solid rgba(255, 218, 139, 0.72);
   color: var(--gold);
   font-size: 10px;
   letter-spacing: 0;
@@ -225,13 +230,13 @@ canvas {
   display: block;
   width: 100%;
   height: auto;
-  border: 1px solid rgba(123, 223, 242, 0.48);
+  border: 1px solid rgba(126, 210, 255, 0.58);
   border-radius: 5px;
   background: linear-gradient(180deg, #15212b 0%, #0b141d 100%);
   box-shadow:
-    0 0 0 1px rgba(255, 209, 102, 0.1),
+    0 0 0 1px rgba(255, 218, 139, 0.12),
     0 18px 48px rgba(0, 0, 0, 0.35),
-    0 0 38px rgba(64, 211, 208, 0.12);
+    0 0 38px rgba(65, 184, 244, 0.18);
   touch-action: none;
 }
 

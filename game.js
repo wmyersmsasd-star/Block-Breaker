@@ -96,6 +96,13 @@ let activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
 let laserShots = [];
 let laserCooldown = 0;
 let levelBannerTime = 0;
+const starfield = Array.from({ length: 150 }, (_, index) => ({
+  x: (index * 173.37 + (index % 5) * 29) % WIDTH,
+  y: (index * 257.91 + (index % 11) * 13) % HEIGHT,
+  size: index % 17 === 0 ? 1.8 : index % 4 === 0 ? 1.2 : 0.7,
+  phase: index * 1.91,
+  color: index % 9 === 0 ? "#ffd58a" : index % 3 === 0 ? "#91f4ed" : "#dceaff"
+}));
 
 
 // ------------------------------------------------------------
@@ -541,26 +548,7 @@ function drawPowerUps() {
 // DRAW: paints the arcade court, effects, and game objects.
 // ------------------------------------------------------------
 function draw() {
-  const background = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-  background.addColorStop(0, "#111827");
-  background.addColorStop(0.5, "#1b1630");
-  background.addColorStop(1, "#0d1326");
-  ctx.fillStyle = background;
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-  const glow = ctx.createRadialGradient(
-    WIDTH / 2,
-    HEIGHT * 0.15,
-    12,
-    WIDTH / 2,
-    HEIGHT * 0.15,
-    WIDTH * 0.8
-  );
-  glow.addColorStop(0, "rgba(255, 77, 141, 0.18)");
-  glow.addColorStop(0.4, "rgba(75, 210, 255, 0.14)");
-  glow.addColorStop(1, "rgba(75, 210, 255, 0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  drawCosmicBackdrop();
 
   drawCourt();
   drawSkyBeam();
@@ -636,6 +624,56 @@ function draw() {
     ctx.fillText(`FINAL SCORE  ${score}`, WIDTH / 2, HEIGHT / 2 + 8);
     ctx.fillText("PRESS R TO RESTART", WIDTH / 2, HEIGHT / 2 + 42);
   }
+}
+
+function drawCosmicBackdrop() {
+  const background = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+  background.addColorStop(0, "#080b20");
+  background.addColorStop(0.48, "#10162b");
+  background.addColorStop(1, "#07121c");
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  ctx.save();
+  const aurora = ctx.createLinearGradient(0, 70, WIDTH, HEIGHT * 0.72);
+  aurora.addColorStop(0, "rgba(76, 92, 255, 0)");
+  aurora.addColorStop(0.28, "rgba(76, 92, 255, 0.28)");
+  aurora.addColorStop(0.55, "rgba(58, 228, 205, 0.22)");
+  aurora.addColorStop(0.78, "rgba(255, 93, 160, 0.18)");
+  aurora.addColorStop(1, "rgba(255, 93, 160, 0)");
+  ctx.globalAlpha = 0.7;
+  ctx.strokeStyle = aurora;
+  ctx.lineCap = "round";
+  ctx.shadowColor = "#54cfe0";
+  ctx.shadowBlur = 34;
+  ctx.lineWidth = 58;
+  ctx.beginPath();
+  ctx.moveTo(-80, HEIGHT * 0.42);
+  ctx.bezierCurveTo(WIDTH * 0.2, HEIGHT * 0.12, WIDTH * 0.46, HEIGHT * 0.78, WIDTH * 0.72, HEIGHT * 0.38);
+  ctx.bezierCurveTo(WIDTH * 0.88, HEIGHT * 0.16, WIDTH * 0.94, HEIGHT * 0.26, WIDTH + 80, HEIGHT * 0.1);
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.34;
+  ctx.shadowBlur = 20;
+  ctx.lineWidth = 24;
+  ctx.beginPath();
+  ctx.moveTo(-40, HEIGHT * 0.76);
+  ctx.bezierCurveTo(WIDTH * 0.25, HEIGHT * 0.95, WIDTH * 0.45, HEIGHT * 0.43, WIDTH * 0.72, HEIGHT * 0.66);
+  ctx.bezierCurveTo(WIDTH * 0.84, HEIGHT * 0.78, WIDTH * 0.91, HEIGHT * 0.58, WIDTH + 50, HEIGHT * 0.5);
+  ctx.stroke();
+
+  const time = performance.now() / 1000;
+  for (const star of starfield) {
+    ctx.globalAlpha = 0.38 + (Math.sin(time * 1.5 + star.phase) + 1) * 0.28;
+    ctx.fillStyle = star.color;
+    ctx.fillRect(star.x, star.y, star.size, star.size);
+    if (star.size > 1.5) {
+      ctx.globalAlpha *= 0.55;
+      ctx.fillRect(star.x - 2.5, star.y + 0.8, star.size + 5, 0.6);
+      ctx.fillRect(star.x + 0.8, star.y - 2.5, 0.6, star.size + 5);
+    }
+  }
+  ctx.restore();
 }
 
 function drawSkyBeam() {
