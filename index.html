@@ -17,6 +17,17 @@
       <p class="home-copy">Ride the rebounds, build a streak, and outlast the circuit. Three lives. No mercy.</p>
       <button id="play-button" type="button">PLAY NOW <span aria-hidden="true">&#9654;</span></button>
       <p class="home-hint">Move: ← → or A / D · Launch: Space · Fire: X</p>
+      <details class="admin-access">
+        <summary>ADMIN ACCESS</summary>
+        <form id="admin-form">
+          <label for="admin-code">Access code</label>
+          <div class="admin-input-row">
+            <input id="admin-code" name="code" type="password" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" autocomplete="off" required>
+            <button type="submit">UNLOCK</button>
+          </div>
+          <p id="admin-status" role="status" aria-live="polite"></p>
+        </form>
+      </details>
     </section>
 
     <section id="game-view" class="game-view" hidden>

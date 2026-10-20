@@ -11,6 +11,9 @@ const ctx = canvas.getContext("2d");
 const homeScreen = document.getElementById("home-screen");
 const gameView = document.getElementById("game-view");
 const playButton = document.getElementById("play-button");
+const adminForm = document.getElementById("admin-form");
+const adminCodeInput = document.getElementById("admin-code");
+const adminStatus = document.getElementById("admin-status");
 const touchButtons = document.querySelectorAll(".touch-controls [data-key]");
 const fireButton = document.getElementById("fire-button");
 
@@ -34,17 +37,25 @@ const ball = {
   height: 14,
   vx: 0,
   vy: 0,
-  color: "#ff5ea8"
+  color: "#ff5ea8",
+  trail: [],
+  serving: true,
+  serveOffset: 0,
+  launchAngle: Math.asin(0.28)
 };
+const balls = [ball];
 let ballSpeed = BALL_SPEED;
 
 // Put the ball in the center and reset its speed and direction.
 function resetBall() {
-  ball.x = paddle.x + paddle.width / 2 - ball.width / 2;
-  ball.y = paddle.y - ball.height - 2;
-  ball.vx = 0;
-  ball.vy = 0;
-  ballTrail = [];
+  for (const targetBall of balls) {
+    targetBall.x = paddle.x + paddle.width / 2 - targetBall.width / 2 + targetBall.serveOffset;
+    targetBall.y = paddle.y - targetBall.height - 2;
+    targetBall.vx = 0;
+    targetBall.vy = 0;
+    targetBall.trail = [];
+    targetBall.serving = true;
+  }
   isServing = true;
 }
 
@@ -71,6 +82,8 @@ let lives = STARTING_LIVES;
 let gameOver = false;
 let hasStarted = false;
 let isServing = true;
+let adminUnlocked = false;
+let adminMode = false;
 let combo = 0;
 let comboTimer = 0;
 const COMBO_DURATION = 2.6;
@@ -90,7 +103,6 @@ function randomizeSkyBeamTarget() {
 let score = 0;
 let level = 1;
 let particles = [];
-let ballTrail = [];
 let powerUps = [];
 let activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
 let laserShots = [];
@@ -136,6 +148,19 @@ document.addEventListener("keyup", function (event) {
 });
 
 playButton.addEventListener("click", startGame);
+adminForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+  if (adminCodeInput.value === "34521") {
+    adminUnlocked = true;
+    adminStatus.textContent = "ADMIN MODE UNLOCKED. START A GAME TO ACTIVATE.";
+    adminForm.classList.add("is-unlocked");
+    adminCodeInput.value = "";
+  } else {
+    adminStatus.textContent = "CODE NOT RECOGNIZED.";
+    adminForm.classList.remove("is-unlocked");
+    adminCodeInput.select();
+  }
+});
 canvas.addEventListener("pointerdown", launchBall);
 if (fireButton) {
   fireButton.addEventListener("pointerdown", function (event) {
@@ -169,7 +194,6 @@ function update() {
 
   movePaddle();
   if (isServing) {
-    ball.x = paddle.x + paddle.width / 2 - ball.width / 2;
     updateParticles();
     updatePowerUps();
     updateEffects();
@@ -189,22 +213,44 @@ function update() {
     advanceLevel();
     return;
   }
-  moveBall();
-
-  bounceOffWalls();   // collisions.js
-  bounceOffPaddle();  // collisions.js
-  const brickHit = bounceOffBricks();  // collisions.js
-  if (brickHit) {
-    combo += 1;
-    comboTimer = COMBO_DURATION;
-    const multiplier = 1 + Math.floor(combo / 4) * 0.25;
-    score += Math.round((brickHit.destroyed ? 100 : 25) * multiplier);
-    burstParticles(brickHit.brick);
-    if (brickHit.destroyed) {
-      maybeDropPowerUp(brickHit.brick);
+  for (const targetBall of balls) {
+    if (targetBall.serving) {
+      continue;
     }
-    if (bricks.length === 0) {
-      advanceLevel();
+    moveBall(targetBall);
+    bounceOffWalls(targetBall);   // collisions.js
+    bounceOffPaddle(targetBall);  // collisions.js
+    const brickHit = bounceOffBricks(targetBall);  // collisions.js
+    if (brickHit) {
+      combo += 1;
+      comboTimer = COMBO_DURATION;
+      const multiplier = 1 + Math.floor(combo / 4) * 0.25;
+      score += Math.round((brickHit.destroyed ? 100 : 25) * multiplier);
+      burstParticles(brickHit.brick);
+      if (brickHit.destroyed) {
+        maybeDropPowerUp(brickHit.brick);
+      }
+      if (bricks.length === 0) {
+        advanceLevel();
+        return;
+      }
+    }
+
+    if (targetBall.y > HEIGHT && !gameOver) {
+      if (adminMode) {
+        launchAdminBall(targetBall);
+      } else {
+        lives -= 1;
+        combo = 0;
+        comboTimer = 0;
+        paddle.x = WIDTH / 2 - paddle.width / 2;
+        if (lives === 0) {
+          gameOver = true;
+          return;
+        }
+        resetBall();
+        return;
+      }
     }
   }
   updateParticles();
@@ -212,34 +258,10 @@ function update() {
   updateEffects();
   levelBannerTime = Math.max(0, levelBannerTime - STEP / 1000);
 
-  // Losing a ball costs one life, but leaves the remaining bricks intact.
-  if (ball.y > HEIGHT && !gameOver) {
-    if (shieldCharges > 0) {
-      shieldCharges -= 1;
-      ball.y = HEIGHT - ball.height - 2;
-      ball.vy = -Math.abs(ball.vy || ballSpeed);
-      burstParticles({
-        x: ball.x,
-        y: HEIGHT - 4,
-        width: ball.width,
-        height: 2,
-        color: "#7bdff2"
-      });
-    } else {
-      lives -= 1;
-      combo = 0;
-      comboTimer = 0;
-      paddle.x = WIDTH / 2 - paddle.width / 2;
-      if (lives === 0) {
-        gameOver = true;
-        return;
-      }
-      resetBall();
-    }
-  }
 }
 
 function restartGame() {
+  adminMode = adminUnlocked;
   lives = STARTING_LIVES;
   gameOver = false;
   score = 0;
@@ -249,12 +271,26 @@ function restartGame() {
   level = 1;
   ballSpeed = BALL_SPEED;
   particles = [];
-  ballTrail = [];
   powerUps = [];
   activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
   laserShots = [];
   laserCooldown = 0;
-  paddle.width = 112;
+  paddle.width = adminMode ? WIDTH : 112;
+  balls.splice(1);
+  if (adminMode) {
+    const angles = [-0.62, -0.31, 0, 0.31, 0.62];
+    const colors = ["#ff5ea8", "#59d9ff", "#ffd166", "#82f59a", "#ad8cff"];
+    ball.serveOffset = -224;
+    ball.launchAngle = angles[0];
+    ball.color = colors[0];
+    for (let index = 1; index < angles.length; index++) {
+      balls.push(createExtraBall(index, angles[index], colors[index]));
+    }
+  } else {
+    ball.serveOffset = 0;
+    ball.launchAngle = Math.asin(0.28);
+    ball.color = "#ff5ea8";
+  }
   bricks = makeBricks();
   paddle.x = WIDTH / 2 - paddle.width / 2;
   skyBeam.elapsed = 0;
