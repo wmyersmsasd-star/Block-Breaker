@@ -11,10 +11,11 @@ const ctx = canvas.getContext("2d");
 const homeScreen = document.getElementById("home-screen");
 const gameView = document.getElementById("game-view");
 const playButton = document.getElementById("play-button");
-const touchButtons = document.querySelectorAll(".touch-controls button");
+const touchButtons = document.querySelectorAll(".touch-controls [data-key]");
+const fireButton = document.getElementById("fire-button");
 
-const WIDTH = canvas.width;   // 600
-const HEIGHT = canvas.height; // 450
+const WIDTH = canvas.width;   // 800
+const HEIGHT = canvas.height; // 600
 
 
 // ------------------------------------------------------------
@@ -23,14 +24,14 @@ const HEIGHT = canvas.height; // 450
 // the ball moves each update (vx = sideways, vy = up/down).
 // A positive vy means the ball is moving DOWN the screen.
 // ------------------------------------------------------------
-const BALL_SPEED = 4;
-const MAX_BALL_SPEED = 6.5;
+const BALL_SPEED = 5;
+const MAX_BALL_SPEED = 7.5;
 
 const ball = {
   x: 0,
   y: 0,
-  width: 12,
-  height: 12,
+  width: 14,
+  height: 14,
   vx: 0,
   vy: 0,
   color: "#ff5ea8"
@@ -52,11 +53,11 @@ function resetBall() {
 // THE PADDLE
 // ------------------------------------------------------------
 const paddle = {
-  x: WIDTH / 2 - 45,
-  y: HEIGHT - 30,
-  width: 90,
-  height: 12,
-  speed: 6,
+  x: WIDTH / 2 - 56,
+  y: HEIGHT - 38,
+  width: 112,
+  height: 15,
+  speed: 7,
   color: "#4de0ff"
 };
 
@@ -91,7 +92,9 @@ let level = 1;
 let particles = [];
 let ballTrail = [];
 let powerUps = [];
-let activeEffects = { wide: 0, slow: 0 };
+let activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
+let laserShots = [];
+let laserCooldown = 0;
 let levelBannerTime = 0;
 
 
@@ -108,6 +111,10 @@ document.addEventListener("keydown", function (event) {
     event.preventDefault();
     launchBall();
   }
+  if (key === "x") {
+    event.preventDefault();
+    fireLaser();
+  }
   if (key === "r" && gameOver) {
     restartGame();
   }
@@ -123,6 +130,12 @@ document.addEventListener("keyup", function (event) {
 
 playButton.addEventListener("click", startGame);
 canvas.addEventListener("pointerdown", launchBall);
+if (fireButton) {
+  fireButton.addEventListener("pointerdown", function (event) {
+    event.preventDefault();
+    fireLaser();
+  });
+}
 for (const button of touchButtons) {
   const key = button.dataset.key;
   button.addEventListener("pointerdown", function (event) {
@@ -165,6 +178,10 @@ function update() {
   }
 
   updateSkyBeam();
+  if (updateLaserShots()) {
+    advanceLevel();
+    return;
+  }
   moveBall();
 
   bounceOffWalls();   // collisions.js
@@ -227,8 +244,10 @@ function restartGame() {
   particles = [];
   ballTrail = [];
   powerUps = [];
-  activeEffects = { wide: 0, slow: 0 };
-  paddle.width = 90;
+  activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
+  laserShots = [];
+  laserCooldown = 0;
+  paddle.width = 112;
   bricks = makeBricks();
   paddle.x = WIDTH / 2 - paddle.width / 2;
   skyBeam.elapsed = 0;
@@ -290,6 +309,8 @@ function advanceLevel() {
   ballSpeed = Math.min(BALL_SPEED + (level - 1) * 0.5, MAX_BALL_SPEED);
   bricks = makeBricks(level);
   powerUps = [];
+  laserShots = [];
+  laserCooldown = 0;
   paddle.x = WIDTH / 2 - paddle.width / 2;
   if (level >= 3) {
     skyBeam.elapsed = 0;
@@ -301,10 +322,10 @@ function advanceLevel() {
 }
 
 function maybeDropPowerUp(brick) {
-  if (bricks.length === 0 || Math.random() > 0.22) {
+  if (bricks.length === 0 || Math.random() > 0.27) {
     return;
   }
-  const types = ["wide", "slow", "life", "shield"];
+  const types = ["wide", "slow", "life", "shield", "laser", "sticky"];
   powerUps.push({
     x: brick.x + brick.width / 2 - 10,
     y: brick.y + brick.height / 2 - 10,
@@ -332,8 +353,8 @@ function updatePowerUps() {
 function collectPowerUp(powerUp) {
   if (powerUp.type === "wide") {
     activeEffects.wide = 12;
-    paddle.width = 140;
-    paddle.x = Math.max(0, Math.min(WIDTH - paddle.width, paddle.x - 25));
+    paddle.width = 164;
+    paddle.x = Math.max(0, Math.min(WIDTH - paddle.width, paddle.x - 26));
   } else if (powerUp.type === "slow") {
     if (activeEffects.slow === 0) {
       setBallSpeed(ballSpeed * 0.72);
@@ -347,6 +368,10 @@ function collectPowerUp(powerUp) {
     }
   } else if (powerUp.type === "shield") {
     shieldCharges = Math.min(2, shieldCharges + 1);
+  } else if (powerUp.type === "laser") {
+    activeEffects.laser = 10;
+  } else if (powerUp.type === "sticky") {
+    activeEffects.sticky = 10;
   }
 }
 
@@ -355,7 +380,7 @@ function updateEffects() {
   if (activeEffects.wide > 0) {
     activeEffects.wide = Math.max(0, activeEffects.wide - elapsed);
     if (activeEffects.wide === 0) {
-      paddle.width = 90;
+      paddle.width = 112;
       paddle.x = Math.min(paddle.x, WIDTH - paddle.width);
     }
   }
@@ -365,6 +390,53 @@ function updateEffects() {
       setBallSpeed(ballSpeed);
     }
   }
+  if (activeEffects.laser > 0) {
+    activeEffects.laser = Math.max(0, activeEffects.laser - elapsed);
+  }
+  if (activeEffects.sticky > 0) {
+    activeEffects.sticky = Math.max(0, activeEffects.sticky - elapsed);
+  }
+}
+
+function fireLaser() {
+  if (!hasStarted || gameOver || activeEffects.laser <= 0 || laserCooldown > 0) {
+    return;
+  }
+  laserShots.push({
+    x: paddle.x + paddle.width / 2 - 2,
+    y: paddle.y - 14,
+    width: 4,
+    height: 14
+  });
+  laserCooldown = 0.28;
+}
+
+function updateLaserShots() {
+  laserCooldown = Math.max(0, laserCooldown - STEP / 1000);
+  for (let i = laserShots.length - 1; i >= 0; i--) {
+    const shot = laserShots[i];
+    shot.y -= 9;
+    if (shot.y + shot.height < 42) {
+      laserShots.splice(i, 1);
+      continue;
+    }
+
+    const brickIndex = bricks.findIndex((brick) => boxesTouch(shot, brick));
+    if (brickIndex === -1) {
+      continue;
+    }
+    const [brick] = bricks.splice(brickIndex, 1);
+    brick.hits -= 1;
+    score += brick.hits <= 0 ? 75 : 30;
+    burstParticles(brick);
+    if (brick.hits > 0) {
+      bricks.splice(brickIndex, 0, brick);
+    } else {
+      maybeDropPowerUp(brick);
+    }
+    laserShots.splice(i, 1);
+  }
+  return bricks.length === 0;
 }
 
 function setBallSpeed(speed) {
@@ -440,8 +512,8 @@ function moveBall() {
 }
 
 function drawPowerUps() {
-  const colors = { wide: "#4ecdc4", slow: "#9b5de5", life: "#ff4d8d", shield: "#7bdff2" };
-  const labels = { wide: "W", slow: "S", life: "+", shield: "G" };
+  const colors = { wide: "#4ecdc4", slow: "#9b5de5", life: "#ff4d8d", shield: "#7bdff2", laser: "#ffd166", sticky: "#a7e58d" };
+  const labels = { wide: "W", slow: "S", life: "+", shield: "G", laser: "L", sticky: "C" };
   for (const powerUp of powerUps) {
     const color = colors[powerUp.type];
     ctx.save();
@@ -466,8 +538,7 @@ function drawPowerUps() {
 
 
 // ------------------------------------------------------------
-// DRAW: paints everything on the canvas. Black background,
-// white shapes.
+// DRAW: paints the arcade court, effects, and game objects.
 // ------------------------------------------------------------
 function draw() {
   const background = ctx.createLinearGradient(0, 0, 0, HEIGHT);
@@ -528,6 +599,7 @@ function draw() {
 
   drawBricks();  // bricks.js
   drawPowerUps();
+  drawLaserShots();
 
   drawParticles();
   drawHud();
@@ -619,13 +691,15 @@ function drawHud() {
     ctx.font = "bold 11px 'Courier New', monospace";
     ctx.fillText(`GUARD x${shieldCharges}`, WIDTH - 16, 58);
   }
-  if (activeEffects.wide > 0 || activeEffects.slow > 0) {
+  if (activeEffects.wide > 0 || activeEffects.slow > 0 || activeEffects.laser > 0 || activeEffects.sticky > 0) {
     ctx.textAlign = "center";
     ctx.font = "bold 11px 'Courier New', monospace";
     ctx.fillStyle = "#bcb3ca";
     const effects = [];
     if (activeEffects.wide > 0) effects.push(`WIDE ${Math.ceil(activeEffects.wide)}s`);
     if (activeEffects.slow > 0) effects.push(`SLOW ${Math.ceil(activeEffects.slow)}s`);
+    if (activeEffects.laser > 0) effects.push(`LASER ${Math.ceil(activeEffects.laser)}s`);
+    if (activeEffects.sticky > 0) effects.push(`CATCH ${Math.ceil(activeEffects.sticky)}s`);
     ctx.fillText(effects.join("  "), WIDTH / 2, HEIGHT - 12);
   }
   if (combo > 0) {
@@ -639,6 +713,22 @@ function drawHud() {
     ctx.fillStyle = "#ffd166";
     ctx.fillRect(16, HEIGHT - 13, streakWidth * (comboTimer / COMBO_DURATION), 3);
   }
+}
+
+function drawLaserShots() {
+  ctx.save();
+  ctx.strokeStyle = "#ffe08a";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.shadowColor = "#ff9f43";
+  ctx.shadowBlur = 14;
+  for (const shot of laserShots) {
+    ctx.beginPath();
+    ctx.moveTo(shot.x + shot.width / 2, shot.y + shot.height);
+    ctx.lineTo(shot.x + shot.width / 2, shot.y);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawShield() {

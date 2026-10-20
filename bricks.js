@@ -2,12 +2,12 @@
 // bricks.js: where the bricks are, and how they are drawn
 // ============================================================
 
-const BRICK_COLUMNS = 8;
-const BRICK_ROWS = 4;
-const BRICK_WIDTH = 60;
-const BRICK_HEIGHT = 20;
+const BRICK_COLUMNS = 10;
+const BRICK_ROWS = 5;
+const BRICK_WIDTH = 68;
+const BRICK_HEIGHT = 22;
 const BRICK_GAP = 6;     // empty space between bricks
-const BRICKS_TOP = 50;   // how far down the first row starts
+const BRICKS_TOP = 74;   // how far down the first row starts
 const BRICK_COLORS = [
   "#ff4d8d",
   "#ffb703",

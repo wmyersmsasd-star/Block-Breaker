@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Block Breaker</title>
+  <title>Block Breaker | Neon Circuit</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,19 +14,24 @@
       </div>
       <p class="eyebrow">Ready, set, smash!</p>
       <h1 id="game-title">BLOCK<br><span>BREAKER</span></h1>
-      <p class="home-copy">Bounce the ball. Break every brick. Keep your 3 lives!</p>
+      <p class="home-copy">Ride the rebounds, build a streak, and outlast the circuit. Three lives. No mercy.</p>
       <button id="play-button" type="button">PLAY NOW <span aria-hidden="true">&#9654;</span></button>
-      <p class="home-hint">Move: ← → or A / D · Launch: Space · Catch power-ups</p>
+      <p class="home-hint">Move: ← → or A / D · Launch: Space · Fire: X</p>
     </section>
 
-    <section id="game-view" hidden>
-      <canvas id="game" width="600" height="450" aria-label="Block Breaker game"></canvas>
+    <section id="game-view" class="game-view" hidden>
+      <header class="game-topline">
+        <div class="game-brand"><span class="brand-glyph">BB</span><span>BLOCK / BREAKER</span></div>
+        <span class="session-label"><i aria-hidden="true"></i> ARCADE SESSION</span>
+      </header>
+      <canvas id="game" width="800" height="600" aria-label="Block Breaker game"></canvas>
       <div class="touch-controls" aria-label="Touch controls">
         <button type="button" data-key="arrowleft" aria-label="Move left">&#8592;</button>
         <button type="button" data-key="arrowright" aria-label="Move right">&#8594;</button>
+        <button id="fire-button" type="button" aria-label="Fire laser">LASER</button>
       </div>
-      <p class="powerup-legend"><span><b>W</b> wider paddle</span><span><b>S</b> slow ball</span><span><b>+</b> extra life</span><span><b>G</b> guard save</span></p>
-      <p>Move with ← →, A / D, or touch controls. Press Space or tap the court to launch.</p>
+      <p class="powerup-legend"><span><b>W</b> wide paddle</span><span><b>S</b> slow ball</span><span><b>+</b> extra life</span><span><b>G</b> guard save</span><span><b>L</b> laser shots</span><span><b>C</b> sticky catch</span></p>
+      <p class="game-instructions">Move: ← → / A D &nbsp;·&nbsp; Launch: Space &nbsp;·&nbsp; Laser: X</p>
     </section>
   </main>
 

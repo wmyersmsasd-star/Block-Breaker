@@ -41,6 +41,14 @@ function bounceOffWalls() {
 function bounceOffPaddle() {
   if (boxesTouch(ball, paddle) && ball.vy > 0) {
     ball.y = paddle.y - ball.height;  // sit on top of the paddle
+    if (activeEffects.sticky > 0) {
+      ball.x = paddle.x + paddle.width / 2 - ball.width / 2;
+      ball.vx = 0;
+      ball.vy = 0;
+      activeEffects.sticky = 0;
+      isServing = true;
+      return;
+    }
     const ballCenter = ball.x + ball.width / 2;
     const paddleCenter = paddle.x + paddle.width / 2;
     const hitPosition = (ballCenter - paddleCenter) / (paddle.width / 2);
