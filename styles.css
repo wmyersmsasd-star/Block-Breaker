@@ -176,6 +176,149 @@ main {
   text-shadow: none;
 }
 
+.case-shop {
+  margin: 34px auto 0;
+  padding: 22px;
+  border: 1px solid rgba(131, 198, 255, 0.24);
+  border-radius: 7px;
+  background: rgba(4, 13, 27, 0.55);
+}
+
+.case-shop .eyebrow {
+  color: #ffda8b;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+}
+
+.case-shop h2 {
+  margin: 7px 0 2px;
+  color: #edf6ff;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+}
+
+.case-shop .case-coins {
+  margin: 6px 0 12px;
+  color: #ffda8b;
+  font-size: 13px;
+}
+
+.case-coins strong {
+  font-size: 17px;
+}
+
+.home-screen .case-shop button {
+  min-width: 0;
+  padding: 10px 16px;
+  border-radius: 5px;
+  background: linear-gradient(100deg, #6550b5, #237e9e 58%, #2db7aa);
+  box-shadow: 0 4px 0 #193f62, 0 0 18px rgba(91, 199, 255, 0.16);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.home-screen .case-shop button:hover {
+  box-shadow: 0 5px 0 #193f62, 0 0 22px rgba(91, 199, 255, 0.3);
+}
+
+.home-screen .case-shop button:disabled {
+  cursor: default;
+  filter: grayscale(0.4);
+  opacity: 0.55;
+  transform: none;
+}
+
+.case-status {
+  min-height: 1.5em;
+  margin: 12px auto 0;
+  color: #c9d8e6;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.case-reveal {
+  animation: case-reveal 520ms ease-out;
+}
+
+.case-odds {
+  margin: 9px auto 16px;
+  color: #9baec0;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  text-transform: none;
+}
+
+.skin-collection {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  text-align: left;
+}
+
+.skin-card {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--skin-color) 48%, transparent);
+  border-radius: 5px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--skin-color) 13%, #0b1322), rgba(8, 15, 27, 0.9));
+}
+
+.skin-swatch {
+  display: block;
+  height: 8px;
+  margin: 2px 0 4px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--skin-highlight), var(--skin-color));
+  box-shadow: 0 0 10px var(--skin-color);
+}
+
+.skin-card strong {
+  overflow: hidden;
+  color: #edf6ff;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skin-rarity {
+  color: var(--skin-highlight);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rarity-legendary {
+  box-shadow: inset 0 0 12px rgba(255, 230, 109, 0.12), 0 0 12px rgba(255, 230, 109, 0.08);
+}
+
+.rarity-epic {
+  box-shadow: inset 0 0 10px rgba(182, 154, 255, 0.09);
+}
+
+.home-screen .skin-card button {
+  width: 100%;
+  margin-top: 3px;
+  padding: 6px 3px;
+  border: 1px solid rgba(177, 201, 220, 0.25);
+  background: rgba(21, 38, 56, 0.88);
+  box-shadow: none;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.home-screen .skin-card button:hover {
+  box-shadow: 0 0 12px color-mix(in srgb, var(--skin-color) 30%, transparent);
+}
+
+.home-screen .skin-card button:disabled {
+  background: rgba(13, 20, 32, 0.72);
+  opacity: 0.72;
+}
+
 .game-view {
   animation: arrive 360ms ease-out both;
 }
@@ -191,6 +334,26 @@ main {
   font-weight: bold;
   letter-spacing: 0.12em;
   text-align: left;
+}
+
+.game-topline button {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 218, 139, 0.48);
+  border-radius: 4px;
+  background: rgba(18, 34, 49, 0.9);
+  color: #ffda8b;
+  cursor: pointer;
+  font: bold 9px "Courier New", monospace;
+  letter-spacing: 0.06em;
+}
+
+.game-topline button:hover {
+  background: rgba(38, 57, 72, 0.95);
+}
+
+.game-topline button:focus-visible {
+  outline: 2px solid #ffda8b;
+  outline-offset: 3px;
 }
 
 .game-brand {
@@ -366,6 +529,22 @@ p {
   }
 }
 
+@keyframes case-reveal {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+  60% {
+    color: #ffda8b;
+    text-shadow: 0 0 14px rgba(255, 218, 139, 0.75);
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (max-width: 560px) {
   body {
     align-items: flex-start;
@@ -388,8 +567,30 @@ p {
     width: 42px;
   }
 
+  .case-shop {
+    padding: 16px 10px;
+  }
+
+  .skin-collection {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .skin-card {
+    padding: 7px;
+  }
+
   .game-topline {
     font-size: 10px;
+  }
+
+  .game-topline .session-label {
+    display: none;
+  }
+
+  .game-topline button {
+    padding: 7px;
+    font-size: 8px;
   }
 
   .session-label {
@@ -410,7 +611,8 @@ p {
 @media (prefers-reduced-motion: reduce) {
   .home-screen,
   .game-view,
-  .brick-showcase span {
+  .brick-showcase span,
+  .case-reveal {
     animation: none;
   }
 

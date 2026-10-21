@@ -17,6 +17,15 @@
       <p class="home-copy">Ride the rebounds, build a streak, and outlast the circuit. Three lives. No mercy.</p>
       <button id="play-button" type="button">PLAY NOW <span aria-hidden="true">&#9654;</span></button>
       <p class="home-hint">Move: ← → or A / D · Launch: Space · Fire: X</p>
+      <section class="case-shop" aria-labelledby="case-shop-title">
+        <p class="eyebrow">Paddle Workshop</p>
+        <h2 id="case-shop-title">CASE OPENER</h2>
+        <p class="case-coins">Coins: <strong id="coin-count">0</strong></p>
+        <button id="open-case-button" class="case-button" type="button">OPEN CASE · 1 COIN</button>
+        <p id="case-status" class="case-status" role="status" aria-live="polite">Beat a level to earn a coin.</p>
+        <p class="case-odds">Drop odds: Common 55% · Uncommon 26% · Rare 13% · Epic 5% · Legendary 1%</p>
+        <div id="skin-collection" class="skin-collection" aria-label="Paddle skin collection"></div>
+      </section>
       <details class="admin-access">
         <summary>ADMIN ACCESS</summary>
         <form id="admin-form">
@@ -34,6 +43,7 @@
       <header class="game-topline">
         <div class="game-brand"><span class="brand-glyph">BB</span><span>BLOCK / BREAKER</span></div>
         <span class="session-label"><i aria-hidden="true"></i> ARCADE SESSION</span>
+        <button id="workshop-button" type="button">END RUN · PADDLE SHOP</button>
       </header>
       <canvas id="game" width="800" height="600" aria-label="Block Breaker game"></canvas>
       <div class="touch-controls" aria-label="Touch controls">

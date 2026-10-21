@@ -16,9 +16,43 @@ const adminCodeInput = document.getElementById("admin-code");
 const adminStatus = document.getElementById("admin-status");
 const touchButtons = document.querySelectorAll(".touch-controls [data-key]");
 const fireButton = document.getElementById("fire-button");
+const coinCount = document.getElementById("coin-count");
+const openCaseButton = document.getElementById("open-case-button");
+const caseStatus = document.getElementById("case-status");
+const skinCollection = document.getElementById("skin-collection");
+const workshopButton = document.getElementById("workshop-button");
 
 const WIDTH = canvas.width;   // 800
 const HEIGHT = canvas.height; // 600
+const SKIN_SAVE_KEY = "blockBreakerPaddleCollection";
+const SKIN_RARITIES = [
+  { name: "Common", chance: 55 },
+  { name: "Uncommon", chance: 26 },
+  { name: "Rare", chance: 13 },
+  { name: "Epic", chance: 5 },
+  { name: "Legendary", chance: 1 }
+];
+const PADDLE_SKINS = [
+  { id: "neon-circuit", name: "Neon Circuit", rarity: "Common", color: "#4de0ff", highlight: "#e9ffff", shadow: "#168c9f", pattern: "solid" },
+  { id: "sunset", name: "Sunset", rarity: "Common", color: "#ff8065", highlight: "#ffe0a6", shadow: "#a83a50", pattern: "stripe" },
+  { id: "sprout", name: "Sprout", rarity: "Common", color: "#83df87", highlight: "#e4ffd1", shadow: "#34794e", pattern: "dots" },
+  { id: "glacier", name: "Glacier", rarity: "Uncommon", color: "#68c9ff", highlight: "#f0ffff", shadow: "#315db3", pattern: "stripe" },
+  { id: "voltage", name: "Voltage", rarity: "Uncommon", color: "#ffe05c", highlight: "#fff8bf", shadow: "#b46a24", pattern: "double" },
+  { id: "berry-pop", name: "Berry Pop", rarity: "Uncommon", color: "#f477c8", highlight: "#ffe6fa", shadow: "#843eaa", pattern: "dots" },
+  { id: "deep-sea", name: "Deep Sea", rarity: "Rare", color: "#358bdb", highlight: "#b9fff4", shadow: "#172f88", pattern: "circuit" },
+  { id: "ember", name: "Ember", rarity: "Rare", color: "#ff633d", highlight: "#ffe26e", shadow: "#8f174e", pattern: "flame" },
+  { id: "amethyst", name: "Amethyst", rarity: "Rare", color: "#a976ff", highlight: "#f7d5ff", shadow: "#56258e", pattern: "prism" },
+  { id: "holochrome", name: "Holochrome", rarity: "Epic", color: "#62ffe0", highlight: "#fff4a8", shadow: "#714dff", pattern: "prism" },
+  { id: "starforge", name: "Starforge", rarity: "Epic", color: "#ffbd54", highlight: "#fff4ca", shadow: "#c63b8f", pattern: "stars" },
+  { id: "phantom", name: "Phantom", rarity: "Epic", color: "#b69aff", highlight: "#eeefff", shadow: "#412e91", pattern: "circuit" },
+  { id: "crown-of-stars", name: "Crown of Stars", rarity: "Legendary", color: "#ffe66d", highlight: "#ffffff", shadow: "#e44eaa", pattern: "stars" },
+  { id: "dragonfire", name: "Dragonfire", rarity: "Legendary", color: "#ff4d68", highlight: "#fff17b", shadow: "#7615b6", pattern: "flame" },
+  { id: "singularity", name: "Singularity", rarity: "Legendary", color: "#69f0ff", highlight: "#ffffff", shadow: "#9c36ff", pattern: "cosmic" }
+];
+const DEFAULT_SKIN_ID = "neon-circuit";
+let caseStatusMessage = "Beat a level to earn a coin.";
+let collectionState = loadCollection();
+let equippedSkin = getSkin(collectionState.equippedSkinId);
 
 
 // ------------------------------------------------------------
@@ -68,9 +102,167 @@ const paddle = {
   y: HEIGHT - 38,
   width: 112,
   height: 15,
-  speed: 7,
-  color: "#4de0ff"
+  speed: 7
 };
+
+function getSkin(skinId) {
+  return PADDLE_SKINS.find((skin) => skin.id === skinId) || PADDLE_SKINS[0];
+}
+
+function loadCollection() {
+  const defaultCollection = {
+    coins: 0,
+    ownedSkinIds: [DEFAULT_SKIN_ID],
+    equippedSkinId: DEFAULT_SKIN_ID
+  };
+
+  try {
+    const saved = window.localStorage.getItem(SKIN_SAVE_KEY);
+    if (!saved) {
+      return defaultCollection;
+    }
+    const parsed = JSON.parse(saved);
+    if (!Number.isSafeInteger(parsed.coins) || parsed.coins < 0 || !Array.isArray(parsed.ownedSkinIds)) {
+      throw new Error("Saved paddle collection has an invalid format.");
+    }
+    const ownedSkinIds = [...new Set(parsed.ownedSkinIds.filter((skinId) =>
+      PADDLE_SKINS.some((skin) => skin.id === skinId)
+    ))];
+    if (!ownedSkinIds.includes(DEFAULT_SKIN_ID)) {
+      ownedSkinIds.push(DEFAULT_SKIN_ID);
+    }
+    const equippedSkinId = ownedSkinIds.includes(parsed.equippedSkinId)
+      ? parsed.equippedSkinId
+      : DEFAULT_SKIN_ID;
+    return { coins: parsed.coins, ownedSkinIds, equippedSkinId };
+  } catch (error) {
+    caseStatusMessage = "Saved collection unavailable; starting with the default skin.";
+    return defaultCollection;
+  }
+}
+
+function saveCollection() {
+  try {
+    window.localStorage.setItem(SKIN_SAVE_KEY, JSON.stringify(collectionState));
+    return true;
+  } catch (error) {
+    caseStatusMessage = "Collection changed, but the browser could not save it.";
+    return false;
+  }
+}
+
+function renderSkinCollection() {
+  if (!coinCount || !skinCollection || !openCaseButton) {
+    return;
+  }
+
+  coinCount.textContent = String(collectionState.coins);
+  skinCollection.replaceChildren();
+  for (const skin of PADDLE_SKINS) {
+    const owned = collectionState.ownedSkinIds.includes(skin.id);
+    const equipped = collectionState.equippedSkinId === skin.id;
+    const card = document.createElement("article");
+    card.className = `skin-card rarity-${skin.rarity.toLowerCase()}`;
+    card.style.setProperty("--skin-color", skin.color);
+    card.style.setProperty("--skin-highlight", skin.highlight);
+
+    const swatch = document.createElement("span");
+    swatch.className = "skin-swatch";
+    swatch.setAttribute("aria-hidden", "true");
+    const name = document.createElement("strong");
+    name.textContent = skin.name;
+    const rarity = document.createElement("span");
+    rarity.className = "skin-rarity";
+    rarity.textContent = skin.rarity;
+    const action = document.createElement("button");
+    action.type = "button";
+    action.disabled = !owned || equipped;
+    action.textContent = !owned ? "LOCKED" : equipped ? "EQUIPPED" : "EQUIP";
+    if (owned && !equipped) {
+      action.addEventListener("click", () => equipSkin(skin.id));
+    }
+
+    card.append(swatch, name, rarity, action);
+    skinCollection.append(card);
+  }
+  openCaseButton.disabled = collectionState.coins < 1
+    || collectionState.ownedSkinIds.length === PADDLE_SKINS.length;
+  if (collectionState.ownedSkinIds.length === PADDLE_SKINS.length) {
+    openCaseButton.textContent = "COLLECTION COMPLETE";
+  } else {
+    openCaseButton.textContent = "OPEN CASE · 1 COIN";
+  }
+}
+
+function equipSkin(skinId) {
+  if (!collectionState.ownedSkinIds.includes(skinId)) {
+    return;
+  }
+  collectionState.equippedSkinId = skinId;
+  equippedSkin = getSkin(skinId);
+  const saved = saveCollection();
+  caseStatusMessage = saved
+    ? `${equippedSkin.name} equipped.`
+    : "Skin equipped for this session, but the browser could not save it.";
+  updateCaseStatus();
+  renderSkinCollection();
+}
+
+function openCase() {
+  if (collectionState.coins < 1) {
+    caseStatusMessage = "You need 1 coin. Beat a level to earn one.";
+    updateCaseStatus();
+    return;
+  }
+
+  const availableSkins = PADDLE_SKINS.filter((skin) =>
+    !collectionState.ownedSkinIds.includes(skin.id)
+  );
+  if (availableSkins.length === 0) {
+    caseStatusMessage = "You have unlocked every paddle skin!";
+    updateCaseStatus();
+    renderSkinCollection();
+    return;
+  }
+
+  collectionState.coins -= 1;
+  const availableRarities = SKIN_RARITIES.map((rarity) => ({
+    ...rarity,
+    skins: availableSkins.filter((skin) => skin.rarity === rarity.name)
+  })).filter((rarity) => rarity.skins.length > 0);
+  const totalChance = availableRarities.reduce((total, rarity) => total + rarity.chance, 0);
+  let roll = Math.random() * totalChance;
+  let selectedRarity = availableRarities[availableRarities.length - 1];
+  for (const rarity of availableRarities) {
+    roll -= rarity.chance;
+    if (roll < 0) {
+      selectedRarity = rarity;
+      break;
+    }
+  }
+
+  const wonSkin = selectedRarity.skins[Math.floor(Math.random() * selectedRarity.skins.length)];
+  collectionState.ownedSkinIds.push(wonSkin.id);
+  collectionState.equippedSkinId = wonSkin.id;
+  equippedSkin = wonSkin;
+  const saved = saveCollection();
+  caseStatusMessage = saved
+    ? `Unlocked ${wonSkin.rarity}: ${wonSkin.name}! It is now equipped.`
+    : `Unlocked ${wonSkin.rarity}: ${wonSkin.name}! It is equipped for this session, but the browser could not save it.`;
+  updateCaseStatus();
+  renderSkinCollection();
+  if (caseStatus) {
+    caseStatus.classList.remove("case-reveal");
+    void caseStatus.offsetWidth;
+    caseStatus.classList.add("case-reveal");
+  }
+}
+
+function updateCaseStatus() {
+  if (caseStatus) {
+    caseStatus.textContent = caseStatusMessage;
+  }
+}
 
 
 // ------------------------------------------------------------
@@ -148,6 +340,8 @@ document.addEventListener("keyup", function (event) {
 });
 
 playButton.addEventListener("click", startGame);
+openCaseButton.addEventListener("click", openCase);
+workshopButton.addEventListener("click", returnToWorkshop);
 adminForm.addEventListener("submit", function (event) {
   event.preventDefault();
   if (adminCodeInput.value === "34521") {
@@ -161,6 +355,8 @@ adminForm.addEventListener("submit", function (event) {
     adminCodeInput.select();
   }
 });
+renderSkinCollection();
+updateCaseStatus();
 canvas.addEventListener("pointerdown", launchBall);
 if (fireButton) {
   fireButton.addEventListener("pointerdown", function (event) {
@@ -377,6 +573,12 @@ function startGame() {
   gameView.hidden = false;
 }
 
+function returnToWorkshop() {
+  hasStarted = false;
+  homeScreen.hidden = false;
+  gameView.hidden = true;
+}
+
 function launchBall() {
   if (!hasStarted || gameOver || !balls.some((targetBall) => targetBall.serving)) {
     return;
@@ -394,6 +596,13 @@ function launchBall() {
 }
 
 function advanceLevel() {
+  collectionState.coins += 1;
+  const saved = saveCollection();
+  caseStatusMessage = saved
+    ? "Level cleared! You earned 1 coin."
+    : "Level cleared! You earned 1 coin, but the browser could not save it.";
+  updateCaseStatus();
+  renderSkinCollection();
   level += 1;
   ballSpeed = Math.min(BALL_SPEED + (level - 1) * 0.5, MAX_BALL_SPEED);
   bricks = makeBricks(level);
@@ -634,6 +843,109 @@ function drawPowerUps() {
   ctx.textBaseline = "alphabetic";
 }
 
+function drawPaddle() {
+  const rarityGlow = {
+    Common: 14,
+    Uncommon: 20,
+    Rare: 26,
+    Epic: 34,
+    Legendary: 44
+  };
+  const patternOpacity = equippedSkin.rarity === "Legendary" ? 0.95
+    : equippedSkin.rarity === "Epic" ? 0.78
+      : equippedSkin.rarity === "Rare" ? 0.62 : 0.48;
+  const paddleGradient = ctx.createLinearGradient(
+    paddle.x,
+    paddle.y,
+    paddle.x,
+    paddle.y + paddle.height
+  );
+  paddleGradient.addColorStop(0, equippedSkin.highlight);
+  paddleGradient.addColorStop(0.35, equippedSkin.color);
+  paddleGradient.addColorStop(1, equippedSkin.shadow);
+  ctx.save();
+  ctx.shadowColor = equippedSkin.color;
+  ctx.shadowBlur = rarityGlow[equippedSkin.rarity];
+  ctx.fillStyle = paddleGradient;
+  roundedRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
+  ctx.clip();
+  ctx.strokeStyle = equippedSkin.highlight;
+  ctx.fillStyle = equippedSkin.highlight;
+  ctx.globalAlpha = patternOpacity;
+  ctx.lineWidth = equippedSkin.rarity === "Legendary" ? 2.5 : 1.5;
+
+  if (equippedSkin.pattern === "stripe" || equippedSkin.pattern === "double"
+      || equippedSkin.pattern === "prism") {
+    const spacing = equippedSkin.pattern === "double" ? 14 : 22;
+    for (let x = paddle.x - paddle.height; x < paddle.x + paddle.width; x += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(x, paddle.y + paddle.height);
+      ctx.lineTo(x + paddle.height, paddle.y);
+      ctx.stroke();
+      if (equippedSkin.pattern === "double") {
+        ctx.beginPath();
+        ctx.moveTo(x + 5, paddle.y + paddle.height);
+        ctx.lineTo(x + paddle.height + 5, paddle.y);
+        ctx.stroke();
+      }
+    }
+  } else if (equippedSkin.pattern === "dots" || equippedSkin.pattern === "cosmic") {
+    for (let x = paddle.x + 8; x < paddle.x + paddle.width; x += 18) {
+      ctx.beginPath();
+      ctx.arc(x, paddle.y + paddle.height / 2, equippedSkin.pattern === "cosmic" ? 2.5 : 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      if (equippedSkin.pattern === "cosmic" && x + 9 < paddle.x + paddle.width) {
+        ctx.beginPath();
+        ctx.arc(x + 9, paddle.y + 4, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  } else if (equippedSkin.pattern === "circuit") {
+    for (let x = paddle.x + 7; x < paddle.x + paddle.width - 8; x += 26) {
+      ctx.beginPath();
+      ctx.moveTo(x, paddle.y + paddle.height);
+      ctx.lineTo(x, paddle.y + 6);
+      ctx.lineTo(x + 9, paddle.y + 6);
+      ctx.stroke();
+      ctx.fillRect(x - 1, paddle.y + 3, 3, 3);
+    }
+  } else if (equippedSkin.pattern === "flame") {
+    for (let x = paddle.x; x < paddle.x + paddle.width; x += 24) {
+      ctx.beginPath();
+      ctx.moveTo(x, paddle.y + paddle.height);
+      ctx.lineTo(x + 8, paddle.y + 5);
+      ctx.lineTo(x + 14, paddle.y + 10);
+      ctx.lineTo(x + 22, paddle.y);
+      ctx.stroke();
+    }
+  } else if (equippedSkin.pattern === "stars") {
+    for (let x = paddle.x + 10; x < paddle.x + paddle.width; x += 28) {
+      const y = paddle.y + paddle.height / 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y - 4);
+      ctx.lineTo(x + 2, y - 1);
+      ctx.lineTo(x + 5, y);
+      ctx.lineTo(x + 2, y + 1);
+      ctx.lineTo(x, y + 4);
+      ctx.lineTo(x - 2, y + 1);
+      ctx.lineTo(x - 5, y);
+      ctx.lineTo(x - 2, y - 1);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  ctx.globalAlpha = 0.78;
+  ctx.fillStyle = equippedSkin.highlight;
+  roundedRect(paddle.x + paddle.width * 0.2, paddle.y + 2, paddle.width * 0.6, 2, 1);
+  ctx.restore();
+}
+
 
 // ------------------------------------------------------------
 // DRAW: paints the arcade court, effects, and game objects.
@@ -646,16 +958,7 @@ function draw() {
   drawShield();
   drawBallTrail();
 
-  const paddleGradient = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.height);
-  paddleGradient.addColorStop(0, "#e9ffff");
-  paddleGradient.addColorStop(0.35, paddle.color);
-  paddleGradient.addColorStop(1, "#168c9f");
-  ctx.shadowColor = paddle.color;
-  ctx.shadowBlur = 18;
-  ctx.fillStyle = paddleGradient;
-  roundedRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
-  ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
-  roundedRect(paddle.x + paddle.width * 0.2, paddle.y + 2, paddle.width * 0.6, 2, 1);
+  drawPaddle();
 
   for (const targetBall of balls) {
     ctx.shadowColor = targetBall.color;
@@ -827,6 +1130,10 @@ function drawHud() {
     WIDTH - 16,
     28
   );
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffda8b";
+  ctx.font = "bold 11px 'Courier New', monospace";
+  ctx.fillText(`COINS ${collectionState.coins}`, 16, 58);
   if (shieldCharges > 0) {
     ctx.fillStyle = "#7bdff2";
     ctx.font = "bold 11px 'Courier New', monospace";
