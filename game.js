@@ -239,6 +239,18 @@ function update() {
     if (targetBall.y > HEIGHT && !gameOver) {
       if (adminMode) {
         launchAdminBall(targetBall);
+      } else if (shieldCharges > 0) {
+        shieldCharges -= 1;
+        targetBall.y = HEIGHT - targetBall.height - 2;
+        targetBall.vy = -Math.abs(targetBall.vy || ballSpeed);
+        burstParticles({
+          x: targetBall.x,
+          y: HEIGHT - 4,
+          width: targetBall.width,
+          height: 2,
+          color: "#7bdff2"
+        });
+        continue;
       } else {
         lives -= 1;
         combo = 0;
@@ -299,6 +311,32 @@ function restartGame() {
   resetBall();
 }
 
+function createExtraBall(index, launchAngle, color) {
+  return {
+    x: 0,
+    y: 0,
+    width: ball.width,
+    height: ball.height,
+    vx: 0,
+    vy: 0,
+    color,
+    trail: [],
+    serving: true,
+    serveOffset: (index - 2) * 112,
+    launchAngle
+  };
+}
+
+function launchAdminBall(targetBall) {
+  targetBall.x = paddle.x + paddle.width / 2 - targetBall.width / 2 + targetBall.serveOffset;
+  targetBall.y = paddle.y - targetBall.height - 2;
+  const speed = ballSpeed * (activeEffects.slow > 0 ? 0.72 : 1);
+  targetBall.vx = Math.sin(targetBall.launchAngle) * speed;
+  targetBall.vy = -Math.cos(targetBall.launchAngle) * speed;
+  targetBall.serving = false;
+  isServing = balls.every((activeBall) => activeBall.serving);
+}
+
 function updateSkyBeam() {
   if (level < 3) {
     skyBeam.elapsed = 0;
@@ -316,9 +354,11 @@ function updateSkyBeam() {
     const beamLeft = skyBeam.targetX - SKY_BEAM_WIDTH / 2;
     const beamRight = skyBeam.targetX + SKY_BEAM_WIDTH / 2;
     if (beamLeft < paddle.x + paddle.width && beamRight > paddle.x) {
-      lives -= 1;
-      if (lives <= 0) {
-        gameOver = true;
+      if (!adminMode) {
+        lives -= 1;
+        if (lives <= 0) {
+          gameOver = true;
+        }
       }
     }
   }
@@ -338,13 +378,19 @@ function startGame() {
 }
 
 function launchBall() {
-  if (!hasStarted || gameOver || !isServing) {
+  if (!hasStarted || gameOver || !balls.some((targetBall) => targetBall.serving)) {
     return;
   }
   const speed = ballSpeed * (activeEffects.slow > 0 ? 0.72 : 1);
-  ball.vx = speed * 0.28;
-  ball.vy = -speed * Math.sqrt(1 - 0.28 ** 2);
-  isServing = false;
+  for (const targetBall of balls) {
+    if (!targetBall.serving) {
+      continue;
+    }
+    targetBall.vx = Math.sin(targetBall.launchAngle) * speed;
+    targetBall.vy = -Math.cos(targetBall.launchAngle) * speed;
+    targetBall.serving = false;
+  }
+  isServing = balls.every((targetBall) => targetBall.serving);
 }
 
 function advanceLevel() {
@@ -483,13 +529,15 @@ function updateLaserShots() {
 }
 
 function setBallSpeed(speed) {
-  const currentSpeed = Math.hypot(ball.vx, ball.vy);
-  if (currentSpeed === 0) {
-    return;
+  for (const targetBall of balls) {
+    const currentSpeed = Math.hypot(targetBall.vx, targetBall.vy);
+    if (currentSpeed === 0) {
+      continue;
+    }
+    const scale = speed / currentSpeed;
+    targetBall.vx *= scale;
+    targetBall.vy *= scale;
   }
-  const scale = speed / currentSpeed;
-  ball.vx *= scale;
-  ball.vy *= scale;
 }
 
 function burstParticles(brick) {
@@ -536,22 +584,25 @@ function movePaddle() {
   if (paddle.x + paddle.width > WIDTH) {
     paddle.x = WIDTH - paddle.width;
   }
-  if (isServing) {
-    ball.x = paddle.x + paddle.width / 2 - ball.width / 2;
+  for (const targetBall of balls) {
+    if (targetBall.serving) {
+      targetBall.x = paddle.x + paddle.width / 2 - targetBall.width / 2 + targetBall.serveOffset;
+      targetBall.y = paddle.y - targetBall.height - 2;
+    }
   }
 }
 
-function moveBall() {
-  ballTrail.push({
-    x: ball.x + ball.width / 2,
-    y: ball.y + ball.height / 2,
+function moveBall(targetBall) {
+  targetBall.trail.push({
+    x: targetBall.x + targetBall.width / 2,
+    y: targetBall.y + targetBall.height / 2,
     life: 0.24
   });
-  if (ballTrail.length > 8) {
-    ballTrail.shift();
+  if (targetBall.trail.length > 8) {
+    targetBall.trail.shift();
   }
-  ball.x = ball.x + ball.vx;
-  ball.y = ball.y + ball.vy;
+  targetBall.x += targetBall.vx;
+  targetBall.y += targetBall.vy;
 }
 
 function drawPowerUps() {
