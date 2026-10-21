@@ -442,7 +442,7 @@ function updatePowerUps() {
 function collectPowerUp(powerUp) {
   if (powerUp.type === "wide") {
     activeEffects.wide = 12;
-    paddle.width = 164;
+    paddle.width = adminMode ? WIDTH : 164;
     paddle.x = Math.max(0, Math.min(WIDTH - paddle.width, paddle.x - 26));
   } else if (powerUp.type === "slow") {
     if (activeEffects.slow === 0) {
@@ -450,7 +450,9 @@ function collectPowerUp(powerUp) {
     }
     activeEffects.slow = 8;
   } else if (powerUp.type === "life") {
-    if (lives < 5) {
+    if (adminMode) {
+      score += 250;
+    } else if (lives < 5) {
       lives += 1;
     } else {
       score += 250;
@@ -469,7 +471,7 @@ function updateEffects() {
   if (activeEffects.wide > 0) {
     activeEffects.wide = Math.max(0, activeEffects.wide - elapsed);
     if (activeEffects.wide === 0) {
-      paddle.width = 112;
+      paddle.width = adminMode ? WIDTH : 112;
       paddle.x = Math.min(paddle.x, WIDTH - paddle.width);
     }
   }
@@ -563,10 +565,12 @@ function updateParticles() {
     particle.life -= STEP / 1000;
   }
   particles = particles.filter((particle) => particle.life > 0);
-  for (const trailPoint of ballTrail) {
-    trailPoint.life -= STEP / 1000;
+  for (const targetBall of balls) {
+    for (const trailPoint of targetBall.trail) {
+      trailPoint.life -= STEP / 1000;
+    }
+    targetBall.trail = targetBall.trail.filter((trailPoint) => trailPoint.life > 0);
   }
-  ballTrail = ballTrail.filter((trailPoint) => trailPoint.life > 0);
 }
 
 function movePaddle() {
@@ -653,23 +657,31 @@ function draw() {
   ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
   roundedRect(paddle.x + paddle.width * 0.2, paddle.y + 2, paddle.width * 0.6, 2, 1);
 
-  ctx.shadowColor = ball.color;
-  ctx.shadowBlur = 18;
-  const ballGradient = ctx.createRadialGradient(
-    ball.x + ball.width * 0.34,
-    ball.y + ball.height * 0.3,
-    1,
-    ball.x + ball.width / 2,
-    ball.y + ball.height / 2,
-    ball.width / 2
-  );
-  ballGradient.addColorStop(0, "#ffffff");
-  ballGradient.addColorStop(0.42, ball.color);
-  ballGradient.addColorStop(1, "#b52c73");
-  ctx.fillStyle = ballGradient;
-  ctx.beginPath();
-  ctx.arc(ball.x + ball.width / 2, ball.y + ball.height / 2, ball.width / 2, 0, Math.PI * 2);
-  ctx.fill();
+  for (const targetBall of balls) {
+    ctx.shadowColor = targetBall.color;
+    ctx.shadowBlur = 18;
+    const ballGradient = ctx.createRadialGradient(
+      targetBall.x + targetBall.width * 0.34,
+      targetBall.y + targetBall.height * 0.3,
+      1,
+      targetBall.x + targetBall.width / 2,
+      targetBall.y + targetBall.height / 2,
+      targetBall.width / 2
+    );
+    ballGradient.addColorStop(0, "#ffffff");
+    ballGradient.addColorStop(0.42, targetBall.color);
+    ballGradient.addColorStop(1, "#b52c73");
+    ctx.fillStyle = ballGradient;
+    ctx.beginPath();
+    ctx.arc(
+      targetBall.x + targetBall.width / 2,
+      targetBall.y + targetBall.height / 2,
+      targetBall.width / 2,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
   ctx.shadowBlur = 0;
 
   drawBricks();  // bricks.js
@@ -810,7 +822,11 @@ function drawHud() {
   ctx.fillText(`LEVEL ${level}  ·  x${(1 + Math.floor(combo / 4) * 0.25).toFixed(2)}`, WIDTH / 2, 28);
   ctx.textAlign = "right";
   ctx.fillStyle = "#d6a0b4";
-  ctx.fillText(`LIVES ${"\u2665 ".repeat(lives).trim()}`, WIDTH - 16, 28);
+  ctx.fillText(
+    adminMode ? "LIVES ∞" : `LIVES ${"\u2665 ".repeat(lives).trim()}`,
+    WIDTH - 16,
+    28
+  );
   if (shieldCharges > 0) {
     ctx.fillStyle = "#7bdff2";
     ctx.font = "bold 11px 'Courier New', monospace";
@@ -872,15 +888,17 @@ function drawShield() {
 
 function drawBallTrail() {
   ctx.save();
-  for (const trailPoint of ballTrail) {
-    const opacity = trailPoint.life / 0.24;
-    ctx.globalAlpha = opacity * 0.4;
-    ctx.fillStyle = ball.color;
-    ctx.shadowColor = ball.color;
-    ctx.shadowBlur = 10;
-    ctx.beginPath();
-    ctx.arc(trailPoint.x, trailPoint.y, 2 + opacity * 3, 0, Math.PI * 2);
-    ctx.fill();
+  for (const targetBall of balls) {
+    for (const trailPoint of targetBall.trail) {
+      const opacity = trailPoint.life / 0.24;
+      ctx.globalAlpha = opacity * 0.4;
+      ctx.fillStyle = targetBall.color;
+      ctx.shadowColor = targetBall.color;
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(trailPoint.x, trailPoint.y, 2 + opacity * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   ctx.restore();
 }
