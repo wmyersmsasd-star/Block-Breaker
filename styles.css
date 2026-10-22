@@ -295,6 +295,11 @@ main {
   box-shadow: inset 0 0 12px rgba(255, 230, 109, 0.12), 0 0 12px rgba(255, 230, 109, 0.08);
 }
 
+.rarity-mythic {
+  color: #ff7777;
+  text-shadow: 0 0 8px rgba(255, 32, 32, 0.85);
+}
+
 .rarity-epic {
   box-shadow: inset 0 0 10px rgba(182, 154, 255, 0.09);
 }

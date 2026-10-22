@@ -47,7 +47,8 @@ const PADDLE_SKINS = [
   { id: "phantom", name: "Phantom", rarity: "Epic", color: "#b69aff", highlight: "#eeefff", shadow: "#412e91", pattern: "circuit" },
   { id: "crown-of-stars", name: "Crown of Stars", rarity: "Legendary", color: "#ffe66d", highlight: "#ffffff", shadow: "#e44eaa", pattern: "stars" },
   { id: "dragonfire", name: "Dragonfire", rarity: "Legendary", color: "#ff4d68", highlight: "#fff17b", shadow: "#7615b6", pattern: "flame" },
-  { id: "singularity", name: "Singularity", rarity: "Legendary", color: "#69f0ff", highlight: "#ffffff", shadow: "#9c36ff", pattern: "cosmic" }
+  { id: "singularity", name: "Singularity", rarity: "Legendary", color: "#69f0ff", highlight: "#ffffff", shadow: "#9c36ff", pattern: "cosmic" },
+  { id: "red-dragon", name: "Crimson Dragon", rarity: "Mythic", oddsLabel: "1 IN 1,000,000", color: "#ff2020", highlight: "#ffd166", shadow: "#720b12", pattern: "dragon" }
 ];
 const DEFAULT_SKIN_ID = "neon-circuit";
 let caseStatusMessage = "Beat a level to earn a coin.";
@@ -173,7 +174,10 @@ function renderSkinCollection() {
     name.textContent = skin.name;
     const rarity = document.createElement("span");
     rarity.className = "skin-rarity";
-    rarity.textContent = skin.rarity;
+    rarity.textContent = skin.oddsLabel || skin.rarity;
+    if (skin.oddsLabel) {
+      rarity.title = `${skin.rarity} - 1 in 1,000,000 chance`;
+    }
     const action = document.createElement("button");
     action.type = "button";
     action.disabled = !owned || equipped;
@@ -226,22 +230,33 @@ function openCase() {
   }
 
   collectionState.coins -= 1;
+  const dragonSkin = availableSkins.find((skin) => skin.id === "red-dragon");
+  let wonSkin = dragonSkin && Math.random() < 1 / 1_000_000 ? dragonSkin : null;
   const availableRarities = SKIN_RARITIES.map((rarity) => ({
     ...rarity,
     skins: availableSkins.filter((skin) => skin.rarity === rarity.name)
   })).filter((rarity) => rarity.skins.length > 0);
-  const totalChance = availableRarities.reduce((total, rarity) => total + rarity.chance, 0);
-  let roll = Math.random() * totalChance;
-  let selectedRarity = availableRarities[availableRarities.length - 1];
-  for (const rarity of availableRarities) {
-    roll -= rarity.chance;
-    if (roll < 0) {
-      selectedRarity = rarity;
-      break;
+  if (!wonSkin && availableRarities.length === 0) {
+    collectionState.coins += 1;
+    caseStatusMessage = "The Crimson Dragon did not appear. Your coin was returned.";
+    updateCaseStatus();
+    renderSkinCollection();
+    return;
+  }
+  if (!wonSkin) {
+    const totalChance = availableRarities.reduce((total, rarity) => total + rarity.chance, 0);
+    let roll = Math.random() * totalChance;
+    let selectedRarity = availableRarities[availableRarities.length - 1];
+    for (const rarity of availableRarities) {
+      roll -= rarity.chance;
+      if (roll < 0) {
+        selectedRarity = rarity;
+        break;
+      }
     }
+    wonSkin = selectedRarity.skins[Math.floor(Math.random() * selectedRarity.skins.length)];
   }
 
-  const wonSkin = selectedRarity.skins[Math.floor(Math.random() * selectedRarity.skins.length)];
   collectionState.ownedSkinIds.push(wonSkin.id);
   collectionState.equippedSkinId = wonSkin.id;
   equippedSkin = wonSkin;
@@ -849,9 +864,11 @@ function drawPaddle() {
     Uncommon: 20,
     Rare: 26,
     Epic: 34,
-    Legendary: 44
+    Legendary: 44,
+    Mythic: 62
   };
-  const patternOpacity = equippedSkin.rarity === "Legendary" ? 0.95
+  const patternOpacity = equippedSkin.rarity === "Mythic" ? 1
+    : equippedSkin.rarity === "Legendary" ? 0.95
     : equippedSkin.rarity === "Epic" ? 0.78
       : equippedSkin.rarity === "Rare" ? 0.62 : 0.48;
   const paddleGradient = ctx.createLinearGradient(
@@ -876,7 +893,7 @@ function drawPaddle() {
   ctx.strokeStyle = equippedSkin.highlight;
   ctx.fillStyle = equippedSkin.highlight;
   ctx.globalAlpha = patternOpacity;
-  ctx.lineWidth = equippedSkin.rarity === "Legendary" ? 2.5 : 1.5;
+  ctx.lineWidth = equippedSkin.rarity === "Mythic" || equippedSkin.rarity === "Legendary" ? 2.5 : 1.5;
 
   if (equippedSkin.pattern === "stripe" || equippedSkin.pattern === "double"
       || equippedSkin.pattern === "prism") {
@@ -937,8 +954,40 @@ function drawPaddle() {
       ctx.closePath();
       ctx.fill();
     }
+  } else if (equippedSkin.pattern === "dragon") {
+    for (let x = paddle.x + 4; x < paddle.x + paddle.width - 4; x += 14) {
+      ctx.beginPath();
+      ctx.moveTo(x, paddle.y + 3);
+      ctx.quadraticCurveTo(x + 6, paddle.y + paddle.height + 3, x + 12, paddle.y + 3);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + 1, paddle.y + 2);
+      ctx.lineTo(x + 5, paddle.y - 3);
+      ctx.lineTo(x + 8, paddle.y + 2);
+      ctx.fill();
+    }
   }
   ctx.restore();
+
+  if (equippedSkin.pattern === "dragon") {
+    const effectTime = performance.now() / 160;
+    ctx.save();
+    ctx.globalAlpha = 0.72;
+    ctx.strokeStyle = equippedSkin.highlight;
+    ctx.shadowColor = equippedSkin.color;
+    ctx.shadowBlur = 16;
+    ctx.lineWidth = 2;
+    for (let index = 0; index < 7; index += 1) {
+      const x = paddle.x + 8 + index * 16;
+      const flicker = Math.sin(effectTime + index * 1.7) * 3;
+      ctx.beginPath();
+      ctx.moveTo(x, paddle.y + 2);
+      ctx.quadraticCurveTo(x - 4, paddle.y - 7 - flicker, x + 2, paddle.y - 12 - flicker);
+      ctx.quadraticCurveTo(x + 1, paddle.y - 5, x + 7, paddle.y + 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 
   ctx.globalAlpha = 0.78;
   ctx.fillStyle = equippedSkin.highlight;
