@@ -25,6 +25,7 @@ const workshopButton = document.getElementById("workshop-button");
 const WIDTH = canvas.width;   // 800
 const HEIGHT = canvas.height; // 600
 const SKIN_SAVE_KEY = "blockBreakerPaddleCollection";
+const CASE_BATCH_SIZE = 100;
 const SKIN_RARITIES = [
   { name: "Common", chance: 55 },
   { name: "Uncommon", chance: 26 },
@@ -158,6 +159,13 @@ function renderSkinCollection() {
   }
 
   coinCount.textContent = adminMode ? "∞" : String(collectionState.coins);
+  const canOpenCases = collectionState.ownedSkinIds.length < PADDLE_SKINS.length;
+  openCaseButton.disabled = (!adminMode && collectionState.coins < CASE_BATCH_SIZE) || !canOpenCases;
+  openCaseButton.textContent = !canOpenCases
+    ? "COLLECTION COMPLETE"
+    : adminMode
+      ? `OPEN ${CASE_BATCH_SIZE} CASES · FREE`
+      : `OPEN ${CASE_BATCH_SIZE} CASES · ${CASE_BATCH_SIZE} COINS`;
   skinCollection.replaceChildren();
   for (const skin of PADDLE_SKINS) {
     const owned = collectionState.ownedSkinIds.includes(skin.id);
@@ -189,13 +197,6 @@ function renderSkinCollection() {
     card.append(swatch, name, rarity, action);
     skinCollection.append(card);
   }
-  openCaseButton.disabled = (!adminMode && collectionState.coins < 1)
-    || collectionState.ownedSkinIds.length === PADDLE_SKINS.length;
-  if (collectionState.ownedSkinIds.length === PADDLE_SKINS.length) {
-    openCaseButton.textContent = "COLLECTION COMPLETE";
-  } else {
-    openCaseButton.textContent = adminMode ? "OPEN CASE · FREE" : "OPEN CASE · 1 COIN";
-  }
 }
 
 function equipSkin(skinId) {
@@ -213,12 +214,6 @@ function equipSkin(skinId) {
 }
 
 function openCase() {
-  if (!adminMode && collectionState.coins < 1) {
-    caseStatusMessage = "You need 1 coin. Beat a level to earn one.";
-    updateCaseStatus();
-    return;
-  }
-
   const availableSkins = PADDLE_SKINS.filter((skin) =>
     !collectionState.ownedSkinIds.includes(skin.id)
   );
@@ -229,47 +224,66 @@ function openCase() {
     return;
   }
 
-  if (!adminMode) {
-    collectionState.coins -= 1;
-  }
-  const dragonSkin = availableSkins.find((skin) => skin.id === "red-dragon");
-  let wonSkin = dragonSkin && Math.random() < 1 / 1_000_000 ? dragonSkin : null;
-  const availableRarities = SKIN_RARITIES.map((rarity) => ({
-    ...rarity,
-    skins: availableSkins.filter((skin) => skin.rarity === rarity.name)
-  })).filter((rarity) => rarity.skins.length > 0);
-  if (!wonSkin && availableRarities.length === 0) {
-    if (!adminMode) {
-      collectionState.coins += 1;
-    }
-    caseStatusMessage = adminMode
-      ? "The Crimson Dragon did not appear. Try again."
-      : "The Crimson Dragon did not appear. Your coin was returned.";
+  const casesToOpen = Math.min(CASE_BATCH_SIZE, availableSkins.length);
+  if (!adminMode && collectionState.coins < casesToOpen) {
+    caseStatusMessage = `You need ${casesToOpen} coins. Beat a level to earn one.`;
     updateCaseStatus();
-    renderSkinCollection();
     return;
   }
-  if (!wonSkin) {
-    const totalChance = availableRarities.reduce((total, rarity) => total + rarity.chance, 0);
-    let roll = Math.random() * totalChance;
-    let selectedRarity = availableRarities[availableRarities.length - 1];
-    for (const rarity of availableRarities) {
-      roll -= rarity.chance;
-      if (roll < 0) {
-        selectedRarity = rarity;
-        break;
-      }
-    }
-    wonSkin = selectedRarity.skins[Math.floor(Math.random() * selectedRarity.skins.length)];
+
+  if (!adminMode) {
+    collectionState.coins -= casesToOpen;
   }
 
-  collectionState.ownedSkinIds.push(wonSkin.id);
-  collectionState.equippedSkinId = wonSkin.id;
-  equippedSkin = wonSkin;
+  let newlyUnlocked = 0;
+  for (let i = 0; i < casesToOpen; i += 1) {
+    const remainingSkins = PADDLE_SKINS.filter((skin) =>
+      !collectionState.ownedSkinIds.includes(skin.id)
+    );
+    if (remainingSkins.length === 0) {
+      break;
+    }
+
+    const dragonSkin = remainingSkins.find((skin) => skin.id === "red-dragon");
+    let wonSkin = dragonSkin && Math.random() < 1 / 1_000_000 ? dragonSkin : null;
+    const availableRarities = SKIN_RARITIES.map((rarity) => ({
+      ...rarity,
+      skins: remainingSkins.filter((skin) => skin.rarity === rarity.name)
+    })).filter((rarity) => rarity.skins.length > 0);
+
+    if (!wonSkin) {
+      if (availableRarities.length === 0) {
+        if (!adminMode) {
+          collectionState.coins += 1;
+        }
+        break;
+      }
+
+      const totalChance = availableRarities.reduce((total, rarity) => total + rarity.chance, 0);
+      let roll = Math.random() * totalChance;
+      let selectedRarity = availableRarities[availableRarities.length - 1];
+      for (const rarity of availableRarities) {
+        roll -= rarity.chance;
+        if (roll < 0) {
+          selectedRarity = rarity;
+          break;
+        }
+      }
+      wonSkin = selectedRarity.skins[Math.floor(Math.random() * selectedRarity.skins.length)];
+    }
+
+    if (!collectionState.ownedSkinIds.includes(wonSkin.id)) {
+      collectionState.ownedSkinIds.push(wonSkin.id);
+      newlyUnlocked += 1;
+    }
+    collectionState.equippedSkinId = wonSkin.id;
+    equippedSkin = wonSkin;
+  }
+
   const saved = saveCollection();
   caseStatusMessage = saved
-    ? `Unlocked ${wonSkin.rarity}: ${wonSkin.name}! It is now equipped.`
-    : `Unlocked ${wonSkin.rarity}: ${wonSkin.name}! It is equipped for this session, but the browser could not save it.`;
+    ? `Opened ${casesToOpen} cases. ${newlyUnlocked > 0 ? `Unlocked ${newlyUnlocked} new skin${newlyUnlocked === 1 ? "" : "s"}.` : "No new skins this batch."}`
+    : `Opened ${casesToOpen} cases. ${newlyUnlocked > 0 ? `Unlocked ${newlyUnlocked} new skin${newlyUnlocked === 1 ? "" : "s"}.` : "No new skins this batch."} The browser could not save the collection.`;
   updateCaseStatus();
   renderSkinCollection();
   if (caseStatus) {
