@@ -157,7 +157,7 @@ function renderSkinCollection() {
     return;
   }
 
-  coinCount.textContent = String(collectionState.coins);
+  coinCount.textContent = adminMode ? "∞" : String(collectionState.coins);
   skinCollection.replaceChildren();
   for (const skin of PADDLE_SKINS) {
     const owned = collectionState.ownedSkinIds.includes(skin.id);
@@ -189,12 +189,12 @@ function renderSkinCollection() {
     card.append(swatch, name, rarity, action);
     skinCollection.append(card);
   }
-  openCaseButton.disabled = collectionState.coins < 1
+  openCaseButton.disabled = (!adminMode && collectionState.coins < 1)
     || collectionState.ownedSkinIds.length === PADDLE_SKINS.length;
   if (collectionState.ownedSkinIds.length === PADDLE_SKINS.length) {
     openCaseButton.textContent = "COLLECTION COMPLETE";
   } else {
-    openCaseButton.textContent = "OPEN CASE · 1 COIN";
+    openCaseButton.textContent = adminMode ? "OPEN CASE · FREE" : "OPEN CASE · 1 COIN";
   }
 }
 
@@ -213,7 +213,7 @@ function equipSkin(skinId) {
 }
 
 function openCase() {
-  if (collectionState.coins < 1) {
+  if (!adminMode && collectionState.coins < 1) {
     caseStatusMessage = "You need 1 coin. Beat a level to earn one.";
     updateCaseStatus();
     return;
@@ -229,7 +229,9 @@ function openCase() {
     return;
   }
 
-  collectionState.coins -= 1;
+  if (!adminMode) {
+    collectionState.coins -= 1;
+  }
   const dragonSkin = availableSkins.find((skin) => skin.id === "red-dragon");
   let wonSkin = dragonSkin && Math.random() < 1 / 1_000_000 ? dragonSkin : null;
   const availableRarities = SKIN_RARITIES.map((rarity) => ({
@@ -237,8 +239,12 @@ function openCase() {
     skins: availableSkins.filter((skin) => skin.rarity === rarity.name)
   })).filter((rarity) => rarity.skins.length > 0);
   if (!wonSkin && availableRarities.length === 0) {
-    collectionState.coins += 1;
-    caseStatusMessage = "The Crimson Dragon did not appear. Your coin was returned.";
+    if (!adminMode) {
+      collectionState.coins += 1;
+    }
+    caseStatusMessage = adminMode
+      ? "The Crimson Dragon did not appear. Try again."
+      : "The Crimson Dragon did not appear. Your coin was returned.";
     updateCaseStatus();
     renderSkinCollection();
     return;
@@ -520,6 +526,7 @@ function restartGame() {
   skyBeam.targetX = WIDTH / 2;
   skyBeam.hasFired = false;
   resetBall();
+  renderSkinCollection();
 }
 
 function createExtraBall(index, launchAngle, color) {
@@ -611,11 +618,15 @@ function launchBall() {
 }
 
 function advanceLevel() {
-  collectionState.coins += 1;
-  const saved = saveCollection();
-  caseStatusMessage = saved
-    ? "Level cleared! You earned 1 coin."
-    : "Level cleared! You earned 1 coin, but the browser could not save it.";
+  if (adminMode) {
+    caseStatusMessage = "Admin mode: coins are unlimited.";
+  } else {
+    collectionState.coins += 1;
+    const saved = saveCollection();
+    caseStatusMessage = saved
+      ? "Level cleared! You earned 1 coin."
+      : "Level cleared! You earned 1 coin, but the browser could not save it.";
+  }
   updateCaseStatus();
   renderSkinCollection();
   level += 1;
@@ -1182,7 +1193,7 @@ function drawHud() {
   ctx.textAlign = "left";
   ctx.fillStyle = "#ffda8b";
   ctx.font = "bold 11px 'Courier New', monospace";
-  ctx.fillText(`COINS ${collectionState.coins}`, 16, 58);
+  ctx.fillText(`COINS ${adminMode ? "∞" : collectionState.coins}`, 16, 58);
   if (shieldCharges > 0) {
     ctx.fillStyle = "#7bdff2";
     ctx.font = "bold 11px 'Courier New', monospace";
