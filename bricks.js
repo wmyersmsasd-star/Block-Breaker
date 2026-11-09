@@ -8,6 +8,10 @@ const BRICK_WIDTH = 68;
 const BRICK_HEIGHT = 22;
 const BRICK_GAP = 6;     // empty space between bricks
 const BRICKS_TOP = 74;   // how far down the first row starts
+const MOVING_BRICK_ROW = 2;
+const MOVING_BRICK_SPEED = 3;
+let movingBrickOffset = 0;
+let movingBrickDirection = 1;
 const BRICK_COLORS = [
   "#ff4d8d",
   "#ffb703",
@@ -23,6 +27,8 @@ const BRICK_COLORS = [
 // x, y, width, and height.
 function makeBricks(level = 1) {
   const list = [];
+  movingBrickOffset = 0;
+  movingBrickDirection = 1;
   const rows = Math.min(BRICK_ROWS + Math.floor((level - 1) / 3), 6);
   const pattern = (level - 1) % 4;
 
@@ -47,6 +53,7 @@ function makeBricks(level = 1) {
       list.push({
         x: left + col * (BRICK_WIDTH + BRICK_GAP),
         y: BRICKS_TOP + row * (BRICK_HEIGHT + BRICK_GAP),
+        row,
         width: BRICK_WIDTH,
         height: BRICK_HEIGHT,
         color: BRICK_COLORS[colorIndex],
@@ -56,6 +63,25 @@ function makeBricks(level = 1) {
   }
 
   return list;
+}
+
+function updateMovingBrickRow() {
+  const totalWidth = BRICK_COLUMNS * BRICK_WIDTH + (BRICK_COLUMNS - 1) * BRICK_GAP;
+  const maxOffset = Math.max(0, WIDTH - totalWidth);
+  const previousOffset = movingBrickOffset;
+  const nextOffset = previousOffset + movingBrickDirection * MOVING_BRICK_SPEED;
+
+  if (nextOffset >= maxOffset || nextOffset <= 0) {
+    movingBrickDirection *= -1;
+  }
+  movingBrickOffset = Math.max(0, Math.min(maxOffset, nextOffset));
+
+  const offsetChange = movingBrickOffset - previousOffset;
+  for (const brick of bricks) {
+    if (brick.row === MOVING_BRICK_ROW) {
+      brick.x += offsetChange;
+    }
+  }
 }
 
 // Draws every brick in the list.

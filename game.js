@@ -424,6 +424,7 @@ function update() {
   }
 
   movePaddle();
+  updateMovingBrickRow();
   if (isServing) {
     updateParticles();
     updatePowerUps();
