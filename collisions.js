@@ -96,6 +96,14 @@ function bounceOffBricks(targetBall = ball) {
       }
     }
 
+    if (brick.type === "tnt") {
+      const tntTriggered = brick.fuse === null;
+      if (tntTriggered) {
+        brick.fuse = TNT_FUSE_SECONDS;
+      }
+      return { brick, destroyed: false, tntTriggered };
+    }
+
     brick.hits -= 1;
     const destroyed = brick.hits === 0;
     if (destroyed) {

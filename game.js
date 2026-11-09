@@ -331,6 +331,7 @@ let score = 0;
 let level = 1;
 let particles = [];
 let brickImpacts = [];
+let tntBlasts = [];
 let powerUps = [];
 let activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
 let laserShots = [];
@@ -426,6 +427,11 @@ function update() {
 
   movePaddle();
   updateMovingBrickRow();
+  updateTntFuses();
+  if (bricks.length === 0) {
+    advanceLevel();
+    return;
+  }
   if (isServing) {
     updateParticles();
     updatePowerUps();
@@ -454,7 +460,7 @@ function update() {
     bounceOffWalls(targetBall);   // collisions.js
     bounceOffPaddle(targetBall);  // collisions.js
     const brickHit = bounceOffBricks(targetBall);  // collisions.js
-    if (brickHit) {
+    if (brickHit && (brickHit.brick.type !== "tnt" || brickHit.tntTriggered)) {
       combo += 1;
       comboTimer = COMBO_DURATION;
       const multiplier = 1 + Math.floor(combo / 4) * 0.25;
@@ -518,6 +524,7 @@ function restartGame() {
   ballSpeed = BALL_SPEED;
   particles = [];
   brickImpacts = [];
+  tntBlasts = [];
   powerUps = [];
   activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
   laserShots = [];
@@ -769,6 +776,17 @@ function updateLaserShots() {
     if (brickIndex === -1) {
       continue;
     }
+    const hitBrick = bricks[brickIndex];
+    if (hitBrick.type === "tnt") {
+      if (hitBrick.fuse === null) {
+        hitBrick.fuse = TNT_FUSE_SECONDS;
+        score += 30;
+        burstParticles(hitBrick);
+        createBrickImpact(hitBrick, false);
+      }
+      laserShots.splice(i, 1);
+      continue;
+    }
     const [brick] = bricks.splice(brickIndex, 1);
     brick.hits -= 1;
     score += brick.hits <= 0 ? 75 : 30;
@@ -825,15 +843,108 @@ function createBrickImpact(brick, destroyed) {
   });
 }
 
+function updateTntFuses() {
+  for (const brick of [...bricks]) {
+    if (brick.type !== "tnt" || brick.fuse === null) {
+      continue;
+    }
+    brick.fuse = Math.max(0, brick.fuse - STEP / 1000);
+    if (brick.fuse === 0 && bricks.includes(brick)) {
+      detonateTnt(brick);
+    }
+  }
+}
+
+function detonateTnt(firstTnt) {
+  const pending = [firstTnt];
+  const destroyedBricks = new Set();
+  const detonatedTnt = new Set();
+  const blastWidth = BRICK_WIDTH + BRICK_GAP;
+  const blastHeight = BRICK_HEIGHT + BRICK_GAP;
+
+  while (pending.length > 0) {
+    const tnt = pending.shift();
+    if (!bricks.includes(tnt) || detonatedTnt.has(tnt)) {
+      continue;
+    }
+    detonatedTnt.add(tnt);
+    createTntBlast(tnt);
+
+    const centerX = tnt.x + tnt.width / 2;
+    const centerY = tnt.y + tnt.height / 2;
+    for (const brick of bricks) {
+      const distanceX = Math.abs(brick.x + brick.width / 2 - centerX);
+      const distanceY = Math.abs(brick.y + brick.height / 2 - centerY);
+      if (distanceX <= blastWidth && distanceY <= blastHeight) {
+        destroyedBricks.add(brick);
+        if (brick.type === "tnt" && !detonatedTnt.has(brick)) {
+          pending.push(brick);
+        }
+      }
+    }
+  }
+
+  const multiplier = 1 + Math.floor(combo / 4) * 0.25;
+  score += destroyedBricks.size * Math.round(100 * multiplier);
+  combo += destroyedBricks.size;
+  comboTimer = COMBO_DURATION;
+  bricks = bricks.filter((brick) => !destroyedBricks.has(brick));
+}
+
+function createTntBlast(brick) {
+  const x = brick.x + brick.width / 2;
+  const y = brick.y + brick.height / 2;
+  tntBlasts.push({ x, y, life: 0.72, duration: 0.72 });
+
+  const sparkColors = ["#ffffff", "#fff2a6", "#ffd166", "#ff8b38", "#ff4d3d"];
+  for (let index = 0; index < 38; index += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * 7;
+    const life = 0.36 + Math.random() * 0.42;
+    particles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      size: 2 + Math.random() * 4,
+      rotation: Math.random() * Math.PI,
+      spin: (Math.random() - 0.5) * 0.42,
+      color: sparkColors[Math.floor(Math.random() * sparkColors.length)]
+    });
+  }
+
+  for (let index = 0; index < 10; index += 1) {
+    const life = 0.55 + Math.random() * 0.4;
+    particles.push({
+      x: x + (Math.random() - 0.5) * 20,
+      y: y + (Math.random() - 0.5) * 10,
+      vx: (Math.random() - 0.5) * 1.8,
+      vy: -0.5 - Math.random() * 1.8,
+      life,
+      maxLife: life,
+      size: 8 + Math.random() * 12,
+      kind: "smoke",
+      color: "rgba(61, 58, 72, 0.65)"
+    });
+  }
+}
+
 function updateParticles() {
   for (const particle of particles) {
     particle.x += particle.vx;
     particle.y += particle.vy;
-    particle.vy += 0.04;
-    particle.rotation += particle.spin;
+    particle.vy += particle.kind === "smoke" ? -0.015 : 0.04;
+    if (particle.spin) {
+      particle.rotation += particle.spin;
+    }
     particle.life -= STEP / 1000;
   }
   particles = particles.filter((particle) => particle.life > 0);
+  for (const blast of tntBlasts) {
+    blast.life -= STEP / 1000;
+  }
+  tntBlasts = tntBlasts.filter((blast) => blast.life > 0);
   for (const impact of brickImpacts) {
     impact.life -= STEP / 1000;
   }
@@ -1087,6 +1198,7 @@ function draw() {
 
   drawBricks();  // bricks.js
   drawBrickImpacts();
+  drawTntBlasts();
   drawPowerUps();
   drawLaserShots();
 
@@ -1341,18 +1453,74 @@ function roundedRect(x, y, width, height, radius) {
 
 function drawParticles() {
   for (const particle of particles) {
-    ctx.globalAlpha = Math.min(1, particle.life * 2);
+    ctx.globalAlpha = particle.kind === "smoke"
+      ? Math.min(1, particle.life / particle.maxLife) * 0.55
+      : Math.min(1, particle.life * 2);
     ctx.fillStyle = particle.color;
     ctx.shadowColor = particle.color;
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = particle.kind === "smoke" ? 0 : 10;
     ctx.save();
-    ctx.translate(particle.x, particle.y);
-    ctx.rotate(particle.rotation);
-    ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
+    if (particle.kind === "smoke") {
+      const progress = 1 - particle.life / particle.maxLife;
+      const radius = particle.size * (0.65 + progress * 0.75);
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.translate(particle.x, particle.y);
+      ctx.rotate(particle.rotation);
+      ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
+    }
     ctx.restore();
   }
   ctx.globalAlpha = 1;
   ctx.shadowBlur = 0;
+}
+
+function drawTntBlasts() {
+  for (const blast of tntBlasts) {
+    const progress = 1 - blast.life / blast.duration;
+    const fade = 1 - progress;
+    const radius = 12 + progress * 112;
+
+    ctx.save();
+    const glow = ctx.createRadialGradient(blast.x, blast.y, 2, blast.x, blast.y, radius);
+    glow.addColorStop(0, `rgba(255, 250, 213, ${0.72 * fade})`);
+    glow.addColorStop(0.18, `rgba(255, 157, 55, ${0.48 * fade})`);
+    glow.addColorStop(1, "rgba(255, 63, 45, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(blast.x, blast.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = fade;
+    ctx.shadowColor = "#ff6a32";
+    ctx.shadowBlur = 22 * fade;
+    ctx.strokeStyle = "#ffd166";
+    ctx.lineWidth = 4 * fade + 0.5;
+    ctx.beginPath();
+    ctx.arc(blast.x, blast.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(255, 245, 207, 0.9)";
+    ctx.lineWidth = 1.5 * fade;
+    ctx.beginPath();
+    ctx.arc(blast.x, blast.y, radius * 0.68, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(255, 197, 100, 0.8)";
+    ctx.lineWidth = 2 * fade;
+    for (let ray = 0; ray < 12; ray += 1) {
+      const angle = (Math.PI * 2 * ray) / 12;
+      const innerRadius = radius * 0.24;
+      const outerRadius = radius * (0.52 + (ray % 3) * 0.1);
+      ctx.beginPath();
+      ctx.moveTo(blast.x + Math.cos(angle) * innerRadius, blast.y + Math.sin(angle) * innerRadius);
+      ctx.lineTo(blast.x + Math.cos(angle) * outerRadius, blast.y + Math.sin(angle) * outerRadius);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
 }
 
 function drawBrickImpacts() {

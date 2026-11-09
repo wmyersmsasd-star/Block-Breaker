@@ -8,6 +8,7 @@ const BRICK_WIDTH = 68;
 const BRICK_HEIGHT = 22;
 const BRICK_GAP = 6;     // empty space between bricks
 const BRICKS_TOP = 74;   // how far down the first row starts
+const TNT_FUSE_SECONDS = 2;
 const MOVING_BRICK_ROW = 2;
 const MOVING_BRICK_SPEED = 3;
 let movingBrickOffset = 0;
@@ -50,14 +51,17 @@ function makeBricks(level = 1) {
 
       const colorIndex = (row + level - 1) % BRICK_COLORS.length;
       const hits = level >= 3 && row < Math.min(2, Math.floor((level - 1) / 2)) ? 2 : 1;
+      const isTnt = row === 0 && (col === 4 || (col === 6 && pattern !== 2));
       list.push({
         x: left + col * (BRICK_WIDTH + BRICK_GAP),
         y: BRICKS_TOP + row * (BRICK_HEIGHT + BRICK_GAP),
         row,
         width: BRICK_WIDTH,
         height: BRICK_HEIGHT,
-        color: BRICK_COLORS[colorIndex],
-        hits
+        color: isTnt ? "#ff633d" : BRICK_COLORS[colorIndex],
+        hits: isTnt ? 1 : hits,
+        type: isTnt ? "tnt" : "normal",
+        fuse: null
       });
     }
   }
@@ -89,10 +93,11 @@ function drawBricks() {
   for (const brick of bricks) {
     const { x, y, width, height } = brick;
     const bevel = 3;
+    const isTnt = brick.type === "tnt";
     const gradient = ctx.createLinearGradient(x, y, x, y + height);
-    gradient.addColorStop(0, "#ffffff");
-    gradient.addColorStop(0.12, brick.color);
-    gradient.addColorStop(1, "rgba(10, 16, 27, 0.78)");
+    gradient.addColorStop(0, isTnt ? "#fff3a6" : "#ffffff");
+    gradient.addColorStop(0.12, isTnt ? "#ff633d" : brick.color);
+    gradient.addColorStop(1, isTnt ? "#811b35" : "rgba(10, 16, 27, 0.78)");
 
     ctx.beginPath();
     ctx.moveTo(x + bevel, y);
@@ -105,13 +110,15 @@ function drawBricks() {
     ctx.lineTo(x, y + bevel);
     ctx.closePath();
 
-    ctx.shadowColor = brick.color;
-    ctx.shadowBlur = 9;
+    ctx.shadowColor = isTnt ? "#ff633d" : brick.color;
+    ctx.shadowBlur = isTnt && brick.fuse !== null
+      ? 15 + Math.sin(performance.now() / 55) * 7
+      : 9;
     ctx.fillStyle = gradient;
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    ctx.strokeStyle = "rgba(255, 239, 220, 0.68)";
+    ctx.strokeStyle = isTnt ? "rgba(255, 239, 160, 0.92)" : "rgba(255, 239, 220, 0.68)";
     ctx.lineWidth = 1;
     ctx.stroke();
 
@@ -130,7 +137,9 @@ function drawBricks() {
     ctx.fillRect(x + 9, y + 7, 3, 1);
     ctx.fillRect(x + width - 15, y + height - 6, 4, 1);
 
-    if (brick.hits === 1) {
+    if (isTnt) {
+      drawTntBrick(brick);
+    } else if (brick.hits === 1) {
       ctx.save();
       ctx.beginPath();
       ctx.moveTo(x + width * 0.54, y + 2);
@@ -152,7 +161,7 @@ function drawBricks() {
       ctx.stroke();
       ctx.restore();
     }
-    if (brick.hits > 1) {
+    if (!isTnt && brick.hits > 1) {
       ctx.fillStyle = "rgba(255, 255, 255, 0.76)";
       for (let hit = 0; hit < brick.hits; hit++) {
         ctx.beginPath();
@@ -160,5 +169,54 @@ function drawBricks() {
         ctx.fill();
       }
     }
+  }
+}
+
+function drawTntBrick(brick) {
+  const { x, y, width, height } = brick;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + 3, y);
+  ctx.lineTo(x + width - 3, y);
+  ctx.lineTo(x + width, y + 3);
+  ctx.lineTo(x + width, y + height - 3);
+  ctx.lineTo(x + width - 3, y + height);
+  ctx.lineTo(x + 3, y + height);
+  ctx.lineTo(x, y + height - 3);
+  ctx.lineTo(x, y + 3);
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.strokeStyle = "rgba(35, 18, 24, 0.52)";
+  ctx.lineWidth = 6;
+  for (let offset = -height; offset < width; offset += 15) {
+    ctx.beginPath();
+    ctx.moveTo(x + offset, y + height);
+    ctx.lineTo(x + offset + height, y);
+    ctx.stroke();
+  }
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "bold 11px 'Courier New', monospace";
+  ctx.fillStyle = "#fff7d1";
+  ctx.shadowColor = "#7b1728";
+  ctx.shadowBlur = 4;
+  ctx.fillText("TNT", x + width / 2, y + height / 2 + 1);
+  ctx.restore();
+
+  if (brick.fuse !== null) {
+    const barX = x + 2;
+    const barY = y - 7;
+    const barWidth = width - 4;
+    const remaining = Math.max(0, brick.fuse / TNT_FUSE_SECONDS);
+    ctx.save();
+    ctx.fillStyle = "rgba(14, 17, 26, 0.92)";
+    ctx.fillRect(barX - 1, barY - 1, barWidth + 2, 6);
+    ctx.fillStyle = remaining > 0.5 ? "#8aff78" : remaining > 0.25 ? "#ffd166" : "#ff405c";
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 8;
+    ctx.fillRect(barX, barY, barWidth * remaining, 4);
+    ctx.restore();
   }
 }
