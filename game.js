@@ -330,6 +330,7 @@ function randomizeSkyBeamTarget() {
 let score = 0;
 let level = 1;
 let particles = [];
+let brickImpacts = [];
 let powerUps = [];
 let activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
 let laserShots = [];
@@ -459,6 +460,7 @@ function update() {
       const multiplier = 1 + Math.floor(combo / 4) * 0.25;
       score += Math.round((brickHit.destroyed ? 100 : 25) * multiplier);
       burstParticles(brickHit.brick);
+      createBrickImpact(brickHit.brick, brickHit.destroyed);
       if (brickHit.destroyed) {
         maybeDropPowerUp(brickHit.brick);
       }
@@ -515,6 +517,7 @@ function restartGame() {
   level = 1;
   ballSpeed = BALL_SPEED;
   particles = [];
+  brickImpacts = [];
   powerUps = [];
   activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
   laserShots = [];
@@ -793,18 +796,33 @@ function setBallSpeed(speed) {
 }
 
 function burstParticles(brick) {
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 18; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const speed = 1 + Math.random() * 3;
+    const speed = 1.2 + Math.random() * 3.8;
     particles.push({
       x: brick.x + brick.width / 2,
       y: brick.y + brick.height / 2,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      life: 0.55,
+      life: 0.36 + Math.random() * 0.28,
+      size: 2 + Math.random() * 3,
+      rotation: Math.random() * Math.PI,
+      spin: (Math.random() - 0.5) * 0.3,
       color: brick.color
     });
   }
+}
+
+function createBrickImpact(brick, destroyed) {
+  const duration = destroyed ? 0.34 : 0.26;
+  brickImpacts.push({
+    x: brick.x + brick.width / 2,
+    y: brick.y + brick.height / 2,
+    color: brick.color,
+    duration,
+    life: duration,
+    destroyed
+  });
 }
 
 function updateParticles() {
@@ -812,9 +830,14 @@ function updateParticles() {
     particle.x += particle.vx;
     particle.y += particle.vy;
     particle.vy += 0.04;
+    particle.rotation += particle.spin;
     particle.life -= STEP / 1000;
   }
   particles = particles.filter((particle) => particle.life > 0);
+  for (const impact of brickImpacts) {
+    impact.life -= STEP / 1000;
+  }
+  brickImpacts = brickImpacts.filter((impact) => impact.life > 0);
   for (const targetBall of balls) {
     for (const trailPoint of targetBall.trail) {
       trailPoint.life -= STEP / 1000;
@@ -1063,6 +1086,7 @@ function draw() {
   ctx.shadowBlur = 0;
 
   drawBricks();  // bricks.js
+  drawBrickImpacts();
   drawPowerUps();
   drawLaserShots();
 
@@ -1321,10 +1345,49 @@ function drawParticles() {
     ctx.fillStyle = particle.color;
     ctx.shadowColor = particle.color;
     ctx.shadowBlur = 10;
-    ctx.fillRect(particle.x, particle.y, 4, 4);
+    ctx.save();
+    ctx.translate(particle.x, particle.y);
+    ctx.rotate(particle.rotation);
+    ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
+    ctx.restore();
   }
   ctx.globalAlpha = 1;
   ctx.shadowBlur = 0;
+}
+
+function drawBrickImpacts() {
+  for (const impact of brickImpacts) {
+    const progress = 1 - impact.life / impact.duration;
+    const fade = 1 - progress;
+    const radius = 4 + progress * (impact.destroyed ? 36 : 25);
+
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.shadowColor = impact.color;
+    ctx.shadowBlur = 18 * fade;
+    ctx.strokeStyle = impact.color;
+    ctx.lineWidth = 3 * fade + 0.5;
+    ctx.beginPath();
+    ctx.arc(impact.x, impact.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = fade * 0.8;
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(impact.x, impact.y, radius * 0.72, 0, Math.PI * 2);
+    ctx.stroke();
+
+    if (progress < 0.24) {
+      ctx.globalAlpha = (1 - progress / 0.24) * 0.9;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(impact.x, impact.y, 4 + (0.24 - progress) * 18, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 }
 
 
