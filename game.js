@@ -317,6 +317,7 @@ let comboPulse = 0;
 const COMBO_DURATION = 2.6;
 const PADDLE_FLASH_DURATION = 0.5;
 let screenFlash = 0;
+let screenFlashColor = "#e1fbff";
 let shieldCharges = 0;
 const SKY_BEAM_PERIOD = 3.4;
 const SKY_BEAM_PULSE_DURATION = 1.4;
@@ -334,6 +335,7 @@ let score = 0;
 let level = 1;
 let particles = [];
 let brickImpacts = [];
+let drinkSplashes = [];
 let tntBlasts = [];
 let powerUps = [];
 let activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
@@ -527,11 +529,13 @@ function restartGame() {
   comboTimer = 0;
   comboPulse = 0;
   screenFlash = 0;
+  screenFlashColor = "#e1fbff";
   shieldCharges = 0;
   level = 1;
   ballSpeed = BALL_SPEED;
   particles = [];
   brickImpacts = [];
+  drinkSplashes = [];
   tntBlasts = [];
   powerUps = [];
   activeEffects = { wide: 0, slow: 0, laser: 0, sticky: 0 };
@@ -797,9 +801,11 @@ function updateLaserShots() {
     }
     const [brick] = bricks.splice(brickIndex, 1);
     brick.hits -= 1;
-    score += brick.hits <= 0 ? 75 : 30;
+    const destroyed = brick.hits <= 0;
+    score += destroyed ? 75 : 30;
     burstParticles(brick);
-    if (brick.hits > 0) {
+    createBrickImpact(brick, destroyed);
+    if (!destroyed) {
       bricks.splice(brickIndex, 0, brick);
     } else {
       maybeDropPowerUp(brick);
@@ -860,12 +866,71 @@ function burstSparks(x, y, color, count, angleStart = 0, angleEnd = Math.PI * 2)
 
 function triggerPaddleHitEffect(targetBall) {
   const impactX = targetBall.x + targetBall.width / 2;
+  const theme = createDrinkEffect(impactX, paddle.y + 2);
   burstSparks(impactX, paddle.y + 2, equippedSkin.highlight, 24, 0.12, Math.PI - 0.12);
   screenFlash = PADDLE_FLASH_DURATION;
+  screenFlashColor = theme.flash;
+}
+
+const DRINK_THEMES = [
+  { name: "juice", colors: ["#ff416c", "#ff9f43", "#ffe66d"], flash: "#fff0f2" },
+  { name: "tea", colors: ["#c58a4a", "#f5d6a0", "#8fd3a8"], flash: "#fff5df" },
+  { name: "tropical", colors: ["#2de2c5", "#ffda55", "#ff6fae"], flash: "#eafff8" }
+];
+
+function createDrinkEffect(x, y) {
+  const theme = DRINK_THEMES[Math.floor(Math.random() * DRINK_THEMES.length)];
+  const duration = 0.52;
+  drinkSplashes.push({ x, y, life: duration, duration, theme });
+
+  const particleCount = theme.name === "tea" ? 14 : 18;
+  for (let index = 0; index < particleCount; index += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = theme.name === "tea"
+      ? 0.7 + Math.random() * 1.8
+      : 1.6 + Math.random() * 3.8;
+    const life = 0.28 + Math.random() * 0.28;
+    const kind = theme.name === "tea" ? "drink-bubble" : "drink-drop";
+    particles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: theme.name === "tea" ? -0.5 - Math.random() * 1.6 : Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 2 + Math.random() * (theme.name === "tea" ? 3 : 5),
+      rotation: angle,
+      kind,
+      color: theme.colors[index % theme.colors.length]
+    });
+  }
+
+  if (theme.name === "tropical") {
+    for (let index = 0; index < 3; index += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.2 + Math.random() * 2.4;
+      const life = 0.38 + Math.random() * 0.18;
+      particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life,
+        maxLife: life,
+        size: 5 + Math.random() * 3,
+        rotation: angle,
+        kind: index === 0 ? "drink-fruit" : "drink-leaf",
+        color: theme.colors[index]
+      });
+    }
+  }
+
+  return theme;
 }
 
 function createBrickImpact(brick, destroyed) {
   const duration = destroyed ? 0.34 : 0.26;
+  createDrinkEffect(brick.x + brick.width / 2, brick.y + brick.height / 2);
   burstSparks(
     brick.x + brick.width / 2,
     brick.y + brick.height / 2,
@@ -988,6 +1053,10 @@ function updateParticles() {
     impact.life -= STEP / 1000;
   }
   brickImpacts = brickImpacts.filter((impact) => impact.life > 0);
+  for (const splash of drinkSplashes) {
+    splash.life -= STEP / 1000;
+  }
+  drinkSplashes = drinkSplashes.filter((splash) => splash.life > 0);
   for (const targetBall of balls) {
     for (const trailPoint of targetBall.trail) {
       trailPoint.life -= STEP / 1000;
@@ -1237,6 +1306,7 @@ function draw() {
 
   drawBricks();  // bricks.js
   drawBrickImpacts();
+  drawDrinkSplashes();
   drawTntBlasts();
   drawPowerUps();
   drawLaserShots();
@@ -1458,7 +1528,8 @@ function drawScreenFlash() {
 
   const fade = screenFlash / PADDLE_FLASH_DURATION;
   ctx.save();
-  ctx.fillStyle = `rgba(225, 251, 255, ${0.34 * fade * fade})`;
+  ctx.globalAlpha = 0.34 * fade * fade;
+  ctx.fillStyle = screenFlashColor;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
   ctx.restore();
 }
@@ -1542,6 +1613,11 @@ function roundedRect(x, y, width, height, radius) {
 
 function drawParticles() {
   for (const particle of particles) {
+    if (particle.kind && particle.kind.startsWith("drink-")) {
+      drawDrinkParticle(particle);
+      continue;
+    }
+
     if (particle.kind === "spark") {
       const opacity = particle.life / particle.maxLife;
       const length = particle.size * opacity;
@@ -1582,6 +1658,88 @@ function drawParticles() {
   }
   ctx.globalAlpha = 1;
   ctx.shadowBlur = 0;
+}
+
+function drawDrinkSplashes() {
+  for (const splash of drinkSplashes) {
+    const progress = 1 - splash.life / splash.duration;
+    const radius = 5 + progress * 34;
+    const opacity = 1 - progress;
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.strokeStyle = splash.theme.colors[0];
+    ctx.lineWidth = 3 * opacity + 0.5;
+    ctx.shadowColor = splash.theme.colors[1];
+    ctx.shadowBlur = 14 * opacity;
+    ctx.beginPath();
+    ctx.ellipse(splash.x, splash.y, radius, radius * 0.62, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = opacity * 0.7;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(splash.x, splash.y, radius * 0.68, radius * 0.38, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawDrinkParticle(particle) {
+  const opacity = Math.max(0, particle.life / particle.maxLife);
+  ctx.save();
+  ctx.translate(particle.x, particle.y);
+  ctx.rotate(particle.rotation);
+  ctx.globalAlpha = opacity;
+  ctx.fillStyle = particle.color;
+  ctx.strokeStyle = particle.color;
+  ctx.shadowColor = particle.color;
+  ctx.shadowBlur = 8;
+
+  if (particle.kind === "drink-bubble") {
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = opacity * 0.8;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(-particle.size * 0.32, -particle.size * 0.32, Math.max(0.7, particle.size * 0.22), 0, Math.PI * 2);
+    ctx.fill();
+  } else if (particle.kind === "drink-fruit") {
+    ctx.beginPath();
+    ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, particle.size * 0.68, 0, Math.PI * 2);
+    ctx.moveTo(-particle.size * 0.5, 0);
+    ctx.lineTo(particle.size * 0.5, 0);
+    ctx.moveTo(0, -particle.size * 0.5);
+    ctx.lineTo(0, particle.size * 0.5);
+    ctx.stroke();
+  } else if (particle.kind === "drink-leaf") {
+    ctx.beginPath();
+    ctx.moveTo(-particle.size, 0);
+    ctx.quadraticCurveTo(0, -particle.size * 0.9, particle.size, 0);
+    ctx.quadraticCurveTo(0, particle.size * 0.9, -particle.size, 0);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.82)";
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-particle.size * 0.75, 0);
+    ctx.lineTo(particle.size * 0.75, 0);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(0, -particle.size);
+    ctx.quadraticCurveTo(particle.size * 0.9, -particle.size * 0.1, particle.size * 0.5, particle.size * 0.62);
+    ctx.quadraticCurveTo(0, particle.size, -particle.size * 0.5, particle.size * 0.62);
+    ctx.quadraticCurveTo(-particle.size * 0.9, -particle.size * 0.1, 0, -particle.size);
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 function drawTntBlasts() {
