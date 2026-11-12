@@ -50,6 +50,8 @@ function makeBricks(level = 1) {
         height: BRICK_HEIGHT,
         color: isTnt ? "#ff633d" : theme.colors[colorIndex],
         hits: isTnt ? 1 : hits,
+        maxHits: isTnt ? 1 : hits,
+        hitFlash: 0,
         type: isTnt ? "tnt" : "normal",
         fuse: null
       });
@@ -99,6 +101,12 @@ function drawBricks() {
     ctx.fillStyle = gradient;
     ctx.fill();
     ctx.shadowBlur = 0;
+    if (brick.hitFlash > 0) {
+      ctx.globalAlpha = brick.hitFlash / 0.2;
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
     ctx.save();
     ctx.beginPath();
     ctx.roundRect(x, y, width, height, 6);
@@ -136,11 +144,13 @@ function drawBricks() {
     if (isTnt) {
       drawTntBrick(brick);
     }
-    if (!isTnt && brick.hits > 1) {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.76)";
-      for (let hit = 0; hit < brick.hits; hit++) {
+    if (!isTnt && brick.maxHits > 1) {
+      for (let hit = 0; hit < brick.maxHits; hit++) {
         ctx.beginPath();
-        ctx.arc(brick.x + brick.width / 2 - (brick.hits - 1) * 4 + hit * 8, brick.y + brick.height / 2, 2, 0, Math.PI * 2);
+        ctx.arc(brick.x + brick.width / 2 - (brick.maxHits - 1) * 4 + hit * 8, brick.y + brick.height / 2, 2, 0, Math.PI * 2);
+        ctx.fillStyle = hit < brick.hits
+          ? "rgba(255, 255, 255, 0.9)"
+          : "rgba(20, 24, 36, 0.55)";
         ctx.fill();
       }
     }

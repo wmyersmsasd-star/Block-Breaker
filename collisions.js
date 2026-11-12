@@ -105,6 +105,7 @@ function bounceOffBricks(targetBall = ball) {
       return { brick, destroyed: false, tntTriggered };
     }
 
+    brick.hitFlash = 0.2;
     brick.hits -= 1;
     const destroyed = brick.hits === 0;
     if (destroyed) {
