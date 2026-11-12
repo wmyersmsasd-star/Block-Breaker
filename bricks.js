@@ -82,23 +82,15 @@ function updateMovingBrickRow() {
 function drawBricks() {
   for (const brick of bricks) {
     const { x, y, width, height } = brick;
-    const bevel = 3;
     const isTnt = brick.type === "tnt";
     const gradient = ctx.createLinearGradient(x, y, x, y + height);
-    gradient.addColorStop(0, isTnt ? "#fff3a6" : "#ffffff");
-    gradient.addColorStop(0.12, isTnt ? "#ff633d" : brick.color);
-    gradient.addColorStop(1, isTnt ? "#811b35" : "rgba(10, 16, 27, 0.78)");
+    gradient.addColorStop(0, isTnt ? "#fff3a6" : "rgba(255, 255, 255, 0.92)");
+    gradient.addColorStop(0.16, isTnt ? "#ff633d" : brick.color);
+    gradient.addColorStop(0.72, isTnt ? "#ff633d" : brick.color);
+    gradient.addColorStop(1, isTnt ? "#811b35" : "rgba(10, 16, 27, 0.64)");
 
     ctx.beginPath();
-    ctx.moveTo(x + bevel, y);
-    ctx.lineTo(x + width - bevel, y);
-    ctx.lineTo(x + width, y + bevel);
-    ctx.lineTo(x + width, y + height - bevel);
-    ctx.lineTo(x + width - bevel, y + height);
-    ctx.lineTo(x + bevel, y + height);
-    ctx.lineTo(x, y + height - bevel);
-    ctx.lineTo(x, y + bevel);
-    ctx.closePath();
+    ctx.roundRect(x, y, width, height, 6);
 
     ctx.shadowColor = isTnt ? "#ff633d" : brick.color;
     ctx.shadowBlur = isTnt && brick.fuse !== null
@@ -107,49 +99,42 @@ function drawBricks() {
     ctx.fillStyle = gradient;
     ctx.fill();
     ctx.shadowBlur = 0;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, 6);
+    ctx.clip();
+    const sheenX = x + ((performance.now() / 1800 + brick.row * 0.19) % 1) * width;
+    const sheen = ctx.createLinearGradient(sheenX - 10, y, sheenX + 10, y + height);
+    sheen.addColorStop(0, "rgba(255, 255, 255, 0)");
+    sheen.addColorStop(0.5, "rgba(255, 255, 255, 0.26)");
+    sheen.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = sheen;
+    ctx.fillRect(x, y, width, height);
+    ctx.restore();
 
-    ctx.strokeStyle = isTnt ? "rgba(255, 239, 160, 0.92)" : "rgba(255, 239, 220, 0.68)";
+    ctx.strokeStyle = isTnt ? "rgba(255, 239, 160, 0.92)" : "rgba(255, 255, 255, 0.72)";
     ctx.lineWidth = 1;
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(x + 5, y + 3);
-    ctx.lineTo(x + width - 5, y + 3);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.38)";
-    ctx.stroke();
+    ctx.ellipse(x + width * 0.24, y + height * 0.2, width * 0.14, height * 0.18, -0.15, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.52)";
+    ctx.fill();
     ctx.beginPath();
-    ctx.moveTo(x + 4, y + height - 2);
-    ctx.lineTo(x + width - 4, y + height - 2);
-    ctx.strokeStyle = "rgba(10, 16, 27, 0.4)";
+    ctx.moveTo(x + width * 0.14, y + height * 0.22);
+    ctx.quadraticCurveTo(x + width * 0.45, y + height * 0.12, x + width * 0.76, y + height * 0.22);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.42)";
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    ctx.fillStyle = "rgba(255, 239, 220, 0.28)";
-    ctx.fillRect(x + 9, y + 7, 3, 1);
-    ctx.fillRect(x + width - 15, y + height - 6, 4, 1);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.32)";
+    ctx.beginPath();
+    ctx.arc(x + width * 0.82, y + height * 0.58, 1.2, 0, Math.PI * 2);
+    ctx.arc(x + width * 0.87, y + height * 0.72, 0.8, 0, Math.PI * 2);
+    ctx.fill();
 
     if (isTnt) {
       drawTntBrick(brick);
-    } else if (brick.hits === 1) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(x + width * 0.54, y + 2);
-      ctx.lineTo(x + width * 0.47, y + height * 0.3);
-      ctx.lineTo(x + width * 0.58, y + height * 0.48);
-      ctx.lineTo(x + width * 0.43, y + height * 0.68);
-      ctx.lineTo(x + width * 0.5, y + height - 2);
-      ctx.moveTo(x + width * 0.47, y + height * 0.3);
-      ctx.lineTo(x + width * 0.32, y + height * 0.42);
-      ctx.moveTo(x + width * 0.58, y + height * 0.48);
-      ctx.lineTo(x + width * 0.72, y + height * 0.38);
-      ctx.strokeStyle = "rgba(28, 18, 20, 0.9)";
-      ctx.lineWidth = 2;
-      ctx.lineJoin = "bevel";
-      ctx.stroke();
-      ctx.translate(-1, -1);
-      ctx.strokeStyle = "rgba(255, 239, 220, 0.72)";
-      ctx.lineWidth = 0.75;
-      ctx.stroke();
-      ctx.restore();
     }
     if (!isTnt && brick.hits > 1) {
       ctx.fillStyle = "rgba(255, 255, 255, 0.76)";

@@ -334,7 +334,6 @@ function randomizeSkyBeamTarget() {
 let score = 0;
 let level = 1;
 let particles = [];
-let brickImpacts = [];
 let drinkSplashes = [];
 let tntBlasts = [];
 let powerUps = [];
@@ -473,8 +472,7 @@ function update() {
       comboPulse = 0.18;
       const multiplier = 1 + Math.floor(combo / 4) * 0.25;
       score += Math.round((brickHit.destroyed ? 100 : 25) * multiplier);
-      burstParticles(brickHit.brick);
-      createBrickImpact(brickHit.brick, brickHit.destroyed);
+      createBrickImpact(brickHit.brick);
       if (brickHit.destroyed) {
         maybeDropPowerUp(brickHit.brick);
       }
@@ -534,7 +532,6 @@ function restartGame() {
   level = 1;
   ballSpeed = BALL_SPEED;
   particles = [];
-  brickImpacts = [];
   drinkSplashes = [];
   tntBlasts = [];
   powerUps = [];
@@ -793,8 +790,7 @@ function updateLaserShots() {
       if (hitBrick.fuse === null) {
         hitBrick.fuse = TNT_FUSE_SECONDS;
         score += 30;
-        burstParticles(hitBrick);
-        createBrickImpact(hitBrick, false);
+        createBrickImpact(hitBrick);
       }
       laserShots.splice(i, 1);
       continue;
@@ -803,8 +799,7 @@ function updateLaserShots() {
     brick.hits -= 1;
     const destroyed = brick.hits <= 0;
     score += destroyed ? 75 : 30;
-    burstParticles(brick);
-    createBrickImpact(brick, destroyed);
+    createBrickImpact(brick);
     if (!destroyed) {
       bricks.splice(brickIndex, 0, brick);
     } else {
@@ -845,29 +840,9 @@ function burstParticles(brick) {
   }
 }
 
-function burstSparks(x, y, color, count, angleStart = 0, angleEnd = Math.PI * 2) {
-  for (let index = 0; index < count; index += 1) {
-    const angle = angleStart + Math.random() * (angleEnd - angleStart);
-    const speed = 1.8 + Math.random() * 4.2;
-    const life = 0.2 + Math.random() * 0.22;
-    particles.push({
-      x,
-      y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life,
-      maxLife: life,
-      size: 5 + Math.random() * 8,
-      kind: "spark",
-      color: Math.random() < 0.35 ? "#ffffff" : color
-    });
-  }
-}
-
 function triggerPaddleHitEffect(targetBall) {
   const impactX = targetBall.x + targetBall.width / 2;
   const theme = createDrinkEffect(impactX, paddle.y + 2);
-  burstSparks(impactX, paddle.y + 2, equippedSkin.highlight, 24, 0.12, Math.PI - 0.12);
   screenFlash = PADDLE_FLASH_DURATION;
   screenFlashColor = theme.flash;
 }
@@ -991,23 +966,8 @@ function createDrinkEffect(x, y) {
   return theme;
 }
 
-function createBrickImpact(brick, destroyed) {
-  const duration = destroyed ? 0.34 : 0.26;
+function createBrickImpact(brick) {
   createDrinkEffect(brick.x + brick.width / 2, brick.y + brick.height / 2);
-  burstSparks(
-    brick.x + brick.width / 2,
-    brick.y + brick.height / 2,
-    brick.color,
-    destroyed ? 28 : 16
-  );
-  brickImpacts.push({
-    x: brick.x + brick.width / 2,
-    y: brick.y + brick.height / 2,
-    color: brick.color,
-    duration,
-    life: duration,
-    destroyed
-  });
 }
 
 function updateTntFuses() {
@@ -1112,10 +1072,6 @@ function updateParticles() {
     blast.life -= STEP / 1000;
   }
   tntBlasts = tntBlasts.filter((blast) => blast.life > 0);
-  for (const impact of brickImpacts) {
-    impact.life -= STEP / 1000;
-  }
-  brickImpacts = brickImpacts.filter((impact) => impact.life > 0);
   for (const splash of drinkSplashes) {
     splash.life -= STEP / 1000;
   }
@@ -1320,6 +1276,34 @@ function drawPaddle() {
     ctx.restore();
   }
 
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
+  ctx.clip();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.ellipse(
+    paddle.x + paddle.width * 0.28,
+    paddle.y + paddle.height * 0.2,
+    paddle.width * 0.2,
+    paddle.height * 0.22,
+    -0.12,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = equippedSkin.highlight;
+  roundedRect(
+    paddle.x + paddle.width * 0.12,
+    paddle.y + 1,
+    paddle.width * 0.76,
+    Math.max(2, paddle.height * 0.2),
+    3
+  );
+  ctx.restore();
+
   ctx.globalAlpha = 0.78;
   ctx.fillStyle = equippedSkin.highlight;
   roundedRect(paddle.x + paddle.width * 0.2, paddle.y + 2, paddle.width * 0.6, 2, 1);
@@ -1341,34 +1325,58 @@ function draw() {
   drawPaddle();
 
   for (const targetBall of balls) {
+    const centerX = targetBall.x + targetBall.width / 2;
+    const centerY = targetBall.y + targetBall.height / 2;
+    const wobble = Math.sin(performance.now() / 75 + targetBall.x * 0.08) * 0.9;
+    const speed = Math.hypot(targetBall.vx, targetBall.vy);
+    const stretch = targetBall.serving ? 0 : Math.min(0.1, speed * 0.012);
     ctx.shadowColor = targetBall.color;
     ctx.shadowBlur = 18;
     const ballGradient = ctx.createRadialGradient(
       targetBall.x + targetBall.width * 0.34,
       targetBall.y + targetBall.height * 0.3,
       1,
-      targetBall.x + targetBall.width / 2,
-      targetBall.y + targetBall.height / 2,
+      centerX,
+      centerY,
       targetBall.width / 2
     );
     ballGradient.addColorStop(0, "#ffffff");
     ballGradient.addColorStop(0.42, targetBall.color);
-    ballGradient.addColorStop(1, "#b52c73");
+    ballGradient.addColorStop(1, "rgba(35, 18, 45, 0.78)");
     ctx.fillStyle = ballGradient;
     ctx.beginPath();
-    ctx.arc(
-      targetBall.x + targetBall.width / 2,
-      targetBall.y + targetBall.height / 2,
-      targetBall.width / 2,
+    ctx.ellipse(
+      centerX,
+      centerY,
+      targetBall.width * (0.5 + stretch),
+      targetBall.height * (0.46 - stretch * 0.45) + wobble * 0.12,
+      Math.atan2(targetBall.vy, targetBall.vx) * 0.08,
       0,
       Math.PI * 2
     );
     ctx.fill();
+    ctx.globalAlpha = 0.72;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.ellipse(
+      targetBall.x + targetBall.width * 0.34,
+      targetBall.y + targetBall.height * 0.28,
+      targetBall.width * 0.16,
+      targetBall.height * 0.1,
+      -0.45,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    ctx.arc(centerX + targetBall.width * 0.2, centerY + targetBall.height * 0.18, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
   }
   ctx.shadowBlur = 0;
 
   drawBricks();  // bricks.js
-  drawBrickImpacts();
   drawDrinkSplashes();
   drawTntBlasts();
   drawPowerUps();
@@ -1690,24 +1698,6 @@ function drawParticles() {
       continue;
     }
 
-    if (particle.kind === "spark") {
-      const opacity = particle.life / particle.maxLife;
-      const length = particle.size * opacity;
-      ctx.save();
-      ctx.globalAlpha = opacity;
-      ctx.strokeStyle = particle.color;
-      ctx.lineWidth = 1 + opacity * 1.4;
-      ctx.lineCap = "round";
-      ctx.shadowColor = particle.color;
-      ctx.shadowBlur = 9;
-      ctx.beginPath();
-      ctx.moveTo(particle.x, particle.y);
-      ctx.lineTo(particle.x - particle.vx * length * 0.65, particle.y - particle.vy * length * 0.65);
-      ctx.stroke();
-      ctx.restore();
-      continue;
-    }
-
     ctx.globalAlpha = particle.kind === "smoke"
       ? Math.min(1, particle.life / particle.maxLife) * 0.55
       : Math.min(1, particle.life * 2);
@@ -1738,6 +1728,21 @@ function drawDrinkSplashes() {
     const radius = 5 + progress * 34;
     const opacity = 1 - progress;
     ctx.save();
+    ctx.globalAlpha = opacity * 0.32;
+    ctx.fillStyle = splash.theme.colors[0];
+    ctx.shadowColor = splash.theme.colors[1];
+    ctx.shadowBlur = 12 * opacity;
+    ctx.beginPath();
+    ctx.moveTo(splash.x - radius, splash.y);
+    ctx.quadraticCurveTo(splash.x - radius * 0.86, splash.y - radius * 0.3, splash.x - radius * 0.64, splash.y - radius * 0.1);
+    ctx.quadraticCurveTo(splash.x - radius * 0.5, splash.y - radius * 0.48, splash.x - radius * 0.35, splash.y - radius * 0.12);
+    ctx.quadraticCurveTo(splash.x - radius * 0.12, splash.y - radius * 0.7, splash.x + radius * 0.04, splash.y - radius * 0.18);
+    ctx.quadraticCurveTo(splash.x + radius * 0.22, splash.y - radius * 0.56, splash.x + radius * 0.4, splash.y - radius * 0.12);
+    ctx.quadraticCurveTo(splash.x + radius * 0.68, splash.y - radius * 0.44, splash.x + radius * 0.72, splash.y - radius * 0.08);
+    ctx.quadraticCurveTo(splash.x + radius * 0.9, splash.y - radius * 0.23, splash.x + radius, splash.y);
+    ctx.quadraticCurveTo(splash.x, splash.y + radius * 0.24, splash.x - radius, splash.y);
+    ctx.fill();
+
     ctx.globalAlpha = opacity;
     ctx.strokeStyle = splash.theme.colors[0];
     ctx.lineWidth = 3 * opacity + 0.5;
@@ -1859,42 +1864,6 @@ function drawTntBlasts() {
     ctx.restore();
   }
 }
-
-function drawBrickImpacts() {
-  for (const impact of brickImpacts) {
-    const progress = 1 - impact.life / impact.duration;
-    const fade = 1 - progress;
-    const radius = 4 + progress * (impact.destroyed ? 36 : 25);
-
-    ctx.save();
-    ctx.globalAlpha = fade;
-    ctx.shadowColor = impact.color;
-    ctx.shadowBlur = 18 * fade;
-    ctx.strokeStyle = impact.color;
-    ctx.lineWidth = 3 * fade + 0.5;
-    ctx.beginPath();
-    ctx.arc(impact.x, impact.y, radius, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.globalAlpha = fade * 0.8;
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(impact.x, impact.y, radius * 0.72, 0, Math.PI * 2);
-    ctx.stroke();
-
-    if (progress < 0.24) {
-      ctx.globalAlpha = (1 - progress / 0.24) * 0.9;
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.arc(impact.x, impact.y, 4 + (0.24 - progress) * 18, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-}
-
 
 // ------------------------------------------------------------
 // THE GAME LOOP
