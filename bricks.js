@@ -13,17 +13,6 @@ const MOVING_BRICK_ROW = 2;
 const MOVING_BRICK_SPEED = 3;
 let movingBrickOffset = 0;
 let movingBrickDirection = 1;
-const BRICK_COLORS = [
-  "#ff4d8d",
-  "#ffb703",
-  "#4ecdc4",
-  "#7bdff2",
-  "#9b5de5",
-  "#7cf29a",
-  "#ff7b54",
-  "#ffd166"
-];
-
 // Builds the list of bricks. Each brick is an object with an
 // x, y, width, and height.
 function makeBricks(level = 1) {
@@ -32,6 +21,7 @@ function makeBricks(level = 1) {
   movingBrickDirection = 1;
   const rows = Math.min(BRICK_ROWS + Math.floor((level - 1) / 3), 6);
   const pattern = (level - 1) % 4;
+  const theme = getDrinkLevelTheme(level);
 
   // Center the whole block of bricks on the screen.
   const totalWidth = BRICK_COLUMNS * BRICK_WIDTH + (BRICK_COLUMNS - 1) * BRICK_GAP;
@@ -49,7 +39,7 @@ function makeBricks(level = 1) {
         continue;
       }
 
-      const colorIndex = (row + level - 1) % BRICK_COLORS.length;
+      const colorIndex = (row + level - 1) % theme.colors.length;
       const hits = level >= 3 && row < Math.min(2, Math.floor((level - 1) / 2)) ? 2 : 1;
       const isTnt = row === 0 && (col === 4 || (col === 6 && pattern !== 2));
       list.push({
@@ -58,7 +48,7 @@ function makeBricks(level = 1) {
         row,
         width: BRICK_WIDTH,
         height: BRICK_HEIGHT,
-        color: isTnt ? "#ff633d" : BRICK_COLORS[colorIndex],
+        color: isTnt ? "#ff633d" : theme.colors[colorIndex],
         hits: isTnt ? 1 : hits,
         type: isTnt ? "tnt" : "normal",
         fuse: null

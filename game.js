@@ -878,6 +878,69 @@ const DRINK_THEMES = [
   { name: "tropical", colors: ["#2de2c5", "#ffda55", "#ff6fae"], flash: "#eafff8" }
 ];
 
+const DRINK_LEVEL_THEMES = [
+  {
+    name: "Citrus Splash",
+    category: "FRUIT JUICE",
+    colors: ["#ff7043", "#ffb52e", "#ffe066", "#8bc34a", "#f44336", "#ffc857", "#e76f51", "#c5e063"],
+    background: ["#25140f", "#30201a", "#101d1a"],
+    glow: "#ff9f43"
+  },
+  {
+    name: "Berry Blend",
+    category: "FRUIT JUICE",
+    colors: ["#e63970", "#b5179e", "#ff6b6b", "#7b2cbf", "#f72585", "#ff8fab", "#9d4edd", "#ff4d6d"],
+    background: ["#200e23", "#28152c", "#111324"],
+    glow: "#f477c8"
+  },
+  {
+    name: "Watermelon Cooler",
+    category: "FRUIT JUICE",
+    colors: ["#ff5d73", "#ff8fa3", "#5ecb82", "#f94144", "#9be564", "#ffb3c1", "#43aa8b", "#f3722c"],
+    background: ["#1d161d", "#211e2b", "#10201d"],
+    glow: "#ff6b6b"
+  },
+  {
+    name: "Peach Iced Tea",
+    category: "TEA",
+    colors: ["#d98245", "#f2b56b", "#e8d09a", "#a9bf83", "#cb6e45", "#f5d6a0", "#8da77b", "#ffc879"],
+    background: ["#241710", "#2c2118", "#172019"],
+    glow: "#e7a35b"
+  },
+  {
+    name: "Matcha Garden",
+    category: "TEA",
+    colors: ["#5e8c45", "#a7c957", "#d4e09b", "#80a65b", "#c4d77e", "#779c59", "#e0e8a4", "#91b85d"],
+    background: ["#101e17", "#1a2a1c", "#111e20"],
+    glow: "#a7c957"
+  },
+  {
+    name: "Hibiscus Tea",
+    category: "TEA",
+    colors: ["#c44569", "#e56b6f", "#f4a261", "#9d4edd", "#ff758f", "#b56576", "#f28482", "#e9c46a"],
+    background: ["#21121e", "#2a1824", "#171624"],
+    glow: "#e56b6f"
+  },
+  {
+    name: "Mango Cooler",
+    category: "TROPICAL DRINK",
+    colors: ["#ff8c42", "#ffd166", "#f9c74f", "#f94144", "#90be6d", "#f9844a", "#ffbe0b", "#43aa8b"],
+    background: ["#25170e", "#302017", "#11201c"],
+    glow: "#ffb52e"
+  },
+  {
+    name: "Pineapple Lime",
+    category: "TROPICAL DRINK",
+    colors: ["#d9ed55", "#a7c957", "#f9c74f", "#52b788", "#ffe66d", "#80b918", "#f4a261", "#34a0a4"],
+    background: ["#17200f", "#202719", "#10201d"],
+    glow: "#d9ed55"
+  }
+];
+
+function getDrinkLevelTheme(currentLevel = level) {
+  return DRINK_LEVEL_THEMES[(currentLevel - 1) % DRINK_LEVEL_THEMES.length];
+}
+
 function createDrinkEffect(x, y) {
   const theme = DRINK_THEMES[Math.floor(Math.random() * DRINK_THEMES.length)];
   const duration = 0.52;
@@ -1316,12 +1379,17 @@ function draw() {
   drawScreenFlash();
 
   if (levelBannerTime > 0 && !gameOver) {
+    const theme = getDrinkLevelTheme();
     ctx.textAlign = "center";
-    ctx.shadowColor = "#4de0ff";
+    ctx.shadowColor = theme.glow;
     ctx.shadowBlur = 18;
     ctx.fillStyle = "#f6fbff";
     ctx.font = "bold 30px 'Courier New', monospace";
-    ctx.fillText(`LEVEL ${level}`, WIDTH / 2, HEIGHT / 2);
+    ctx.fillText(theme.name, WIDTH / 2, HEIGHT / 2);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = theme.glow;
+    ctx.font = "bold 13px 'Courier New', monospace";
+    ctx.fillText(`LEVEL ${level}  ·  ${theme.category}`, WIDTH / 2, HEIGHT / 2 + 25);
     ctx.shadowBlur = 0;
   }
 
@@ -1350,19 +1418,20 @@ function draw() {
 }
 
 function drawCosmicBackdrop() {
+  const theme = getDrinkLevelTheme();
   const background = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
-  background.addColorStop(0, "#080b20");
-  background.addColorStop(0.48, "#10162b");
-  background.addColorStop(1, "#07121c");
+  background.addColorStop(0, theme.background[0]);
+  background.addColorStop(0.48, theme.background[1]);
+  background.addColorStop(1, theme.background[2]);
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
   ctx.save();
   const aurora = ctx.createLinearGradient(0, 70, WIDTH, HEIGHT * 0.72);
   aurora.addColorStop(0, "rgba(76, 92, 255, 0)");
-  aurora.addColorStop(0.28, "rgba(76, 92, 255, 0.28)");
-  aurora.addColorStop(0.55, "rgba(58, 228, 205, 0.22)");
-  aurora.addColorStop(0.78, "rgba(255, 93, 160, 0.18)");
+  aurora.addColorStop(0.28, theme.glow);
+  aurora.addColorStop(0.55, theme.colors[2]);
+  aurora.addColorStop(0.78, theme.colors[0]);
   aurora.addColorStop(1, "rgba(255, 93, 160, 0)");
   ctx.globalAlpha = 0.7;
   ctx.strokeStyle = aurora;
@@ -1429,7 +1498,7 @@ function drawSkyBeam() {
 function drawHud() {
   ctx.fillStyle = "rgba(6, 12, 20, 0.78)";
   ctx.fillRect(0, 0, WIDTH, 42);
-  ctx.strokeStyle = "rgba(123, 223, 242, 0.32)";
+  ctx.strokeStyle = `${getDrinkLevelTheme().glow}88`;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(0, 41.5);
@@ -1442,9 +1511,12 @@ function drawHud() {
   ctx.textAlign = "left";
   ctx.fillText(`SCORE ${String(score).padStart(5, "0")}`, 16, 28);
   ctx.textAlign = "center";
-  ctx.fillStyle = "#a2c6c8";
-  ctx.fillText(`LEVEL ${level}  ·  x${(1 + Math.floor(combo / 4) * 0.25).toFixed(2)}`, WIDTH / 2, 28);
+  const theme = getDrinkLevelTheme();
+  ctx.fillStyle = theme.glow;
+  ctx.font = "bold 12px 'Courier New', monospace";
+  ctx.fillText(`${theme.name.toUpperCase()}  ·  x${(1 + Math.floor(combo / 4) * 0.25).toFixed(2)}`, WIDTH / 2, 28);
   ctx.textAlign = "right";
+  ctx.font = "bold 14px 'Courier New', monospace";
   ctx.fillStyle = "#d6a0b4";
   ctx.fillText(
     adminMode ? "LIVES ∞" : `LIVES ${"\u2665 ".repeat(lives).trim()}`,
@@ -1597,7 +1669,7 @@ function drawCourt() {
     ctx.lineTo(WIDTH, y);
     ctx.stroke();
   }
-  ctx.strokeStyle = "rgba(123, 223, 242, 0.22)";
+  ctx.strokeStyle = `${getDrinkLevelTheme().glow}66`;
   ctx.beginPath();
   ctx.moveTo(0, 42);
   ctx.lineTo(WIDTH, 42);

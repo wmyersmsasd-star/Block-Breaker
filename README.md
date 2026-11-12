@@ -1,5 +1,9 @@
 # Super-Basic-Brick-Bounce-Game
 
+## Drink-themed levels
+
+Levels cycle through eight alcohol-free drink themes, including fruit juices, teas, and tropical coolers. Each theme changes the brick colors, court glow, and level title.
+
 ## Paddle skins
 
 Beat a level to earn 1 coin. Spend 1 coin on the home screen to open a case and unlock a paddle skin; new skins equip automatically, and any unlocked skin can be equipped from the collection. Use **End Run · Paddle Shop** during a game to return to the workshop. Coins and unlocked skins are saved in the browser.
