@@ -41,6 +41,7 @@ function bounceOffWalls(targetBall = ball) {
 function bounceOffPaddle(targetBall = ball) {
   if (boxesTouch(targetBall, paddle) && targetBall.vy > 0) {
     targetBall.y = paddle.y - targetBall.height;  // sit on top of the paddle
+    triggerPaddleHitEffect(targetBall);
     if (activeEffects.sticky > 0) {
       targetBall.x = paddle.x + paddle.width / 2 - targetBall.width / 2;
       targetBall.vx = 0;

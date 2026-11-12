@@ -313,7 +313,10 @@ let adminUnlocked = false;
 let adminMode = false;
 let combo = 0;
 let comboTimer = 0;
+let comboPulse = 0;
 const COMBO_DURATION = 2.6;
+const PADDLE_FLASH_DURATION = 0.5;
+let screenFlash = 0;
 let shieldCharges = 0;
 const SKY_BEAM_PERIOD = 3.4;
 const SKY_BEAM_PULSE_DURATION = 1.4;
@@ -425,6 +428,8 @@ function update() {
     return;
   }
 
+  screenFlash = Math.max(0, screenFlash - STEP / 1000);
+  comboPulse = Math.max(0, comboPulse - STEP / 1000);
   movePaddle();
   updateMovingBrickRow();
   updateTntFuses();
@@ -463,6 +468,7 @@ function update() {
     if (brickHit && (brickHit.brick.type !== "tnt" || brickHit.tntTriggered)) {
       combo += 1;
       comboTimer = COMBO_DURATION;
+      comboPulse = 0.18;
       const multiplier = 1 + Math.floor(combo / 4) * 0.25;
       score += Math.round((brickHit.destroyed ? 100 : 25) * multiplier);
       burstParticles(brickHit.brick);
@@ -519,6 +525,8 @@ function restartGame() {
   score = 0;
   combo = 0;
   comboTimer = 0;
+  comboPulse = 0;
+  screenFlash = 0;
   shieldCharges = 0;
   level = 1;
   ballSpeed = BALL_SPEED;
@@ -831,8 +839,39 @@ function burstParticles(brick) {
   }
 }
 
+function burstSparks(x, y, color, count, angleStart = 0, angleEnd = Math.PI * 2) {
+  for (let index = 0; index < count; index += 1) {
+    const angle = angleStart + Math.random() * (angleEnd - angleStart);
+    const speed = 1.8 + Math.random() * 4.2;
+    const life = 0.2 + Math.random() * 0.22;
+    particles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 5 + Math.random() * 8,
+      kind: "spark",
+      color: Math.random() < 0.35 ? "#ffffff" : color
+    });
+  }
+}
+
+function triggerPaddleHitEffect(targetBall) {
+  const impactX = targetBall.x + targetBall.width / 2;
+  burstSparks(impactX, paddle.y + 2, equippedSkin.highlight, 24, 0.12, Math.PI - 0.12);
+  screenFlash = PADDLE_FLASH_DURATION;
+}
+
 function createBrickImpact(brick, destroyed) {
   const duration = destroyed ? 0.34 : 0.26;
+  burstSparks(
+    brick.x + brick.width / 2,
+    brick.y + brick.height / 2,
+    brick.color,
+    destroyed ? 28 : 16
+  );
   brickImpacts.push({
     x: brick.x + brick.width / 2,
     y: brick.y + brick.height / 2,
@@ -934,7 +973,7 @@ function updateParticles() {
   for (const particle of particles) {
     particle.x += particle.vx;
     particle.y += particle.vy;
-    particle.vy += particle.kind === "smoke" ? -0.015 : 0.04;
+    particle.vy += particle.kind === "smoke" ? -0.015 : particle.kind === "spark" ? 0.015 : 0.04;
     if (particle.spin) {
       particle.rotation += particle.spin;
     }
@@ -1204,6 +1243,7 @@ function draw() {
 
   drawParticles();
   drawHud();
+  drawScreenFlash();
 
   if (levelBannerTime > 0 && !gameOver) {
     ctx.textAlign = "center";
@@ -1361,17 +1401,66 @@ function drawHud() {
     if (activeEffects.sticky > 0) effects.push(`CATCH ${Math.ceil(activeEffects.sticky)}s`);
     ctx.fillText(effects.join("  "), WIDTH / 2, HEIGHT - 12);
   }
-  if (combo > 0) {
-    const streakWidth = 112;
-    ctx.textAlign = "left";
-    ctx.font = "bold 10px 'Courier New', monospace";
-    ctx.fillStyle = "#ffd166";
-    ctx.fillText(`STREAK x${(1 + Math.floor(combo / 4) * 0.25).toFixed(2)}`, 16, HEIGHT - 20);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
-    ctx.fillRect(16, HEIGHT - 13, streakWidth, 3);
-    ctx.fillStyle = "#ffd166";
-    ctx.fillRect(16, HEIGHT - 13, streakWidth * (comboTimer / COMBO_DURATION), 3);
+  drawComboMeter();
+}
+
+function drawComboMeter() {
+  if (combo === 0) {
+    return;
   }
+
+  const x = 16;
+  const y = HEIGHT - 51;
+  const width = 196;
+  const height = 40;
+  const multiplier = (1 + Math.floor(combo / 4) * 0.25).toFixed(2);
+  const meterWidth = width - 18;
+
+  ctx.save();
+  ctx.fillStyle = "rgba(5, 12, 24, 0.88)";
+  ctx.strokeStyle = "rgba(255, 209, 102, 0.72)";
+  ctx.lineWidth = 1;
+  ctx.shadowColor = "#ffd166";
+  ctx.shadowBlur = comboPulse > 0 ? 5 + 9 * (comboPulse / 0.18) : 5;
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, 5);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.font = "bold 11px 'Courier New', monospace";
+  ctx.fillStyle = "#fff0bd";
+  ctx.fillText(`COMBO ${String(combo).padStart(2, "0")}`, x + 9, y + 12);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#ffd166";
+  ctx.fillText(`x${multiplier}`, x + width - 9, y + 12);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
+  ctx.beginPath();
+  ctx.roundRect(x + 9, y + 25, meterWidth, 5, 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffd166";
+  ctx.shadowColor = "#ffb703";
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.roundRect(x + 9, y + 25, meterWidth * (comboTimer / COMBO_DURATION), 5, 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawScreenFlash() {
+  if (screenFlash <= 0) {
+    return;
+  }
+
+  const fade = screenFlash / PADDLE_FLASH_DURATION;
+  ctx.save();
+  ctx.fillStyle = `rgba(225, 251, 255, ${0.34 * fade * fade})`;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  ctx.restore();
 }
 
 function drawLaserShots() {
@@ -1453,6 +1542,24 @@ function roundedRect(x, y, width, height, radius) {
 
 function drawParticles() {
   for (const particle of particles) {
+    if (particle.kind === "spark") {
+      const opacity = particle.life / particle.maxLife;
+      const length = particle.size * opacity;
+      ctx.save();
+      ctx.globalAlpha = opacity;
+      ctx.strokeStyle = particle.color;
+      ctx.lineWidth = 1 + opacity * 1.4;
+      ctx.lineCap = "round";
+      ctx.shadowColor = particle.color;
+      ctx.shadowBlur = 9;
+      ctx.beginPath();
+      ctx.moveTo(particle.x, particle.y);
+      ctx.lineTo(particle.x - particle.vx * length * 0.65, particle.y - particle.vy * length * 0.65);
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+
     ctx.globalAlpha = particle.kind === "smoke"
       ? Math.min(1, particle.life / particle.maxLife) * 0.55
       : Math.min(1, particle.life * 2);
