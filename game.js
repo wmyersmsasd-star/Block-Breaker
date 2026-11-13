@@ -1077,6 +1077,180 @@ function drawPowerUps() {
   ctx.textBaseline = "alphabetic";
 }
 
+function drawDragonPaddle() {
+  const x = (fraction) => paddle.x + paddle.width * fraction;
+  const y = (offset) => paddle.y + offset;
+  const drawWing = (root, tip, lower) => {
+    ctx.beginPath();
+    ctx.moveTo(x(root), y(7));
+    ctx.quadraticCurveTo(x(root - 0.02), y(-5), x(tip), y(-23));
+    ctx.quadraticCurveTo(x(tip + 0.02), y(-7), x(lower), y(8));
+    ctx.quadraticCurveTo(x(root + 0.02), y(12), x(root), y(7));
+    const wingGradient = ctx.createLinearGradient(x(root), y(-20), x(lower), y(12));
+    wingGradient.addColorStop(0, "#ff8750");
+    wingGradient.addColorStop(0.55, "#c51f27");
+    wingGradient.addColorStop(1, "#64111c");
+    ctx.fillStyle = wingGradient;
+    ctx.strokeStyle = "#58101a";
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x(root), y(7));
+    ctx.lineTo(x(tip), y(-21));
+    ctx.moveTo(x(root + 0.025), y(8));
+    ctx.lineTo(x(tip - 0.035), y(-8));
+    ctx.moveTo(x(root + 0.05), y(9));
+    ctx.lineTo(x(lower), y(7));
+    ctx.strokeStyle = "rgba(255, 202, 126, 0.78)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  };
+
+  ctx.save();
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = "transparent";
+
+  drawWing(0.39, 0.25, 0.53);
+  drawWing(0.57, 0.68, 0.47);
+
+  ctx.beginPath();
+  ctx.moveTo(x(0.3), y(8));
+  ctx.quadraticCurveTo(x(0.18), y(12), x(0.08), y(4));
+  ctx.quadraticCurveTo(x(0.16), y(5), x(0.2), y(1));
+  ctx.quadraticCurveTo(x(0.23), y(6), x(0.35), y(3));
+  ctx.closePath();
+  ctx.fillStyle = "#8c1722";
+  ctx.fill();
+  ctx.strokeStyle = "#f05b48";
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  const drawBody = (offsetX, offsetY, fillStyle) => {
+    ctx.beginPath();
+    ctx.moveTo(x(0.2) + offsetX, y(8) + offsetY);
+    ctx.quadraticCurveTo(x(0.24) + offsetX, y(-1) + offsetY, x(0.43) + offsetX, y(0) + offsetY);
+    ctx.quadraticCurveTo(x(0.61) + offsetX, y(-2) + offsetY, x(0.75) + offsetX, y(5) + offsetY);
+    ctx.lineTo(x(0.84) + offsetX, y(7) + offsetY);
+    ctx.lineTo(x(0.81) + offsetX, y(12) + offsetY);
+    ctx.quadraticCurveTo(x(0.54) + offsetX, y(17) + offsetY, x(0.3) + offsetX, y(13) + offsetY);
+    ctx.closePath();
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+  };
+
+  ctx.shadowColor = "#ff3428";
+  ctx.shadowBlur = 15;
+  drawBody(1.5, 2, "#4e0c17");
+  const bodyGradient = ctx.createLinearGradient(paddle.x, y(-1), paddle.x, y(16));
+  bodyGradient.addColorStop(0, "#ff9860");
+  bodyGradient.addColorStop(0.28, "#e53932");
+  bodyGradient.addColorStop(0.72, "#a51b27");
+  bodyGradient.addColorStop(1, "#55101b");
+  drawBody(0, 0, bodyGradient);
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "#ffbd78";
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x(0.28), y(4));
+  ctx.quadraticCurveTo(x(0.49), y(0), x(0.71), y(5));
+  ctx.strokeStyle = "rgba(255, 220, 159, 0.8)";
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  for (let index = 0; index < 7; index += 1) {
+    const scaleX = 0.31 + index * 0.057;
+    const scaleY = index % 2 === 0 ? 6 : 9;
+    ctx.beginPath();
+    ctx.moveTo(x(scaleX - 0.025), y(scaleY));
+    ctx.quadraticCurveTo(x(scaleX), y(scaleY - 5), x(scaleX + 0.025), y(scaleY));
+    ctx.quadraticCurveTo(x(scaleX), y(scaleY + 2), x(scaleX - 0.025), y(scaleY));
+    ctx.fillStyle = index % 2 === 0 ? "#f45a43" : "#c42a30";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 197, 119, 0.8)";
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+
+  for (const legX of [0.37, 0.68]) {
+    ctx.beginPath();
+    ctx.moveTo(x(legX - 0.025), y(9));
+    ctx.quadraticCurveTo(x(legX - 0.055), y(13), x(legX - 0.035), y(15));
+    ctx.lineTo(x(legX + 0.035), y(15));
+    ctx.quadraticCurveTo(x(legX + 0.05), y(12), x(legX + 0.025), y(9));
+    ctx.closePath();
+    ctx.fillStyle = "#a51b27";
+    ctx.fill();
+    ctx.strokeStyle = "#ffbd78";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    for (let claw = -1; claw <= 1; claw += 1) {
+      ctx.beginPath();
+      ctx.moveTo(x(legX + claw * 0.024), y(14));
+      ctx.lineTo(x(legX + claw * 0.024 + 0.012), y(17));
+      ctx.strokeStyle = "#ffe1a0";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(x(0.72), y(5));
+  ctx.quadraticCurveTo(x(0.79), y(2), x(0.82), y(0));
+  ctx.quadraticCurveTo(x(0.85), y(-1), x(0.9), y(1));
+  ctx.lineTo(x(0.99), y(4));
+  ctx.lineTo(x(0.97), y(8));
+  ctx.lineTo(x(0.9), y(9));
+  ctx.quadraticCurveTo(x(0.81), y(11), x(0.75), y(8));
+  ctx.closePath();
+  const headGradient = ctx.createLinearGradient(x(0.83), y(-2), x(0.9), y(10));
+  headGradient.addColorStop(0, "#ffb36b");
+  headGradient.addColorStop(0.4, "#ed4936");
+  headGradient.addColorStop(1, "#72131f");
+  ctx.fillStyle = headGradient;
+  ctx.fill();
+  ctx.strokeStyle = "#ffd08b";
+  ctx.lineWidth = 1.3;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x(0.82), y(2));
+  ctx.lineTo(x(0.8), y(-5));
+  ctx.lineTo(x(0.86), y(1));
+  ctx.moveTo(x(0.88), y(1));
+  ctx.lineTo(x(0.91), y(-4));
+  ctx.lineTo(x(0.93), y(3));
+  ctx.strokeStyle = "#ffe0a0";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.ellipse(x(0.9), y(4), Math.max(1.5, paddle.width * 0.014), 1.7, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#fff36b";
+  ctx.shadowColor = "#fff36b";
+  ctx.shadowBlur = 6;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.moveTo(x(0.9), y(3));
+  ctx.lineTo(x(0.9), y(5));
+  ctx.strokeStyle = "#491018";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x(0.975), y(5), 0.8, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffe3aa";
+  ctx.fill();
+
+  ctx.restore();
+}
+
 function drawPaddle() {
   const jellyProgress = paddleJelly > 0
     ? 1 - paddleJelly / PADDLE_JELLY_DURATION
@@ -1201,26 +1375,6 @@ function drawPaddle() {
   }
   ctx.restore();
 
-  if (equippedSkin.pattern === "dragon") {
-    const effectTime = performance.now() / 160;
-    ctx.save();
-    ctx.globalAlpha = 0.72;
-    ctx.strokeStyle = equippedSkin.highlight;
-    ctx.shadowColor = equippedSkin.color;
-    ctx.shadowBlur = 16;
-    ctx.lineWidth = 2;
-    for (let index = 0; index < 7; index += 1) {
-      const x = paddle.x + 8 + index * 16;
-      const flicker = Math.sin(effectTime + index * 1.7) * 3;
-      ctx.beginPath();
-      ctx.moveTo(x, paddle.y + 2);
-      ctx.quadraticCurveTo(x - 4, paddle.y - 7 - flicker, x + 2, paddle.y - 12 - flicker);
-      ctx.quadraticCurveTo(x + 1, paddle.y - 5, x + 7, paddle.y + 2);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
   ctx.save();
   ctx.beginPath();
   ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 6);
@@ -1252,6 +1406,9 @@ function drawPaddle() {
   ctx.globalAlpha = 0.78;
   ctx.fillStyle = equippedSkin.highlight;
   roundedRect(paddle.x + paddle.width * 0.2, paddle.y + 2, paddle.width * 0.6, 2, 1);
+  if (equippedSkin.pattern === "dragon") {
+    drawDragonPaddle();
+  }
   ctx.restore();
   ctx.restore();
 }
