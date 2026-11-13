@@ -15,7 +15,6 @@ const adminForm = document.getElementById("admin-form");
 const adminCodeInput = document.getElementById("admin-code");
 const adminStatus = document.getElementById("admin-status");
 const touchButtons = document.querySelectorAll(".touch-controls [data-key]");
-const fireButton = document.getElementById("fire-button");
 const coinCount = document.getElementById("coin-count");
 const openCaseButton = document.getElementById("open-case-button");
 const caseStatus = document.getElementById("case-status");
@@ -339,9 +338,7 @@ let particles = [];
 let drinkSplashes = [];
 let tntBlasts = [];
 let powerUps = [];
-let activeEffects = { wide: 0, slow: 0, drink: 0, sticky: 0 };
-let drinkPour = null;
-let drinkCooldown = 0;
+let activeEffects = { wide: 0, slow: 0, sticky: 0 };
 let levelBannerTime = 0;
 const starfield = Array.from({ length: 150 }, (_, index) => ({
   x: (index * 173.37 + (index % 5) * 29) % WIDTH,
@@ -364,10 +361,6 @@ document.addEventListener("keydown", function (event) {
   if ((key === " " || key === "enter") && hasStarted && !gameOver) {
     event.preventDefault();
     launchBall();
-  }
-  if (key === "x") {
-    event.preventDefault();
-    fireDrink();
   }
   if (key === "r" && gameOver) {
     restartGame();
@@ -401,12 +394,6 @@ adminForm.addEventListener("submit", function (event) {
 renderSkinCollection();
 updateCaseStatus();
 canvas.addEventListener("pointerdown", launchBall);
-if (fireButton) {
-  fireButton.addEventListener("pointerdown", function (event) {
-    event.preventDefault();
-    fireDrink();
-  });
-}
 for (const button of touchButtons) {
   const key = button.dataset.key;
   button.addEventListener("pointerdown", function (event) {
@@ -437,10 +424,6 @@ function update() {
   paddleJelly = Math.max(0, paddleJelly - STEP / 1000);
   updateMovingBrickRow();
   updateTntFuses();
-  if (updateDrinkPour()) {
-    advanceLevel();
-    return;
-  }
   if (bricks.length === 0) {
     advanceLevel();
     return;
@@ -538,9 +521,7 @@ function restartGame() {
   drinkSplashes = [];
   tntBlasts = [];
   powerUps = [];
-  activeEffects = { wide: 0, slow: 0, drink: 0, sticky: 0 };
-  drinkPour = null;
-  drinkCooldown = 0;
+  activeEffects = { wide: 0, slow: 0, sticky: 0 };
   paddleJelly = 0;
   paddle.width = adminMode ? WIDTH : 112;
   balls.splice(1);
@@ -671,8 +652,6 @@ function advanceLevel() {
   ballSpeed = Math.min(BALL_SPEED + (level - 1) * 0.5, MAX_BALL_SPEED);
   bricks = makeBricks(level);
   powerUps = [];
-  drinkPour = null;
-  drinkCooldown = 0;
   paddle.x = WIDTH / 2 - paddle.width / 2;
   if (level >= 3) {
     skyBeam.elapsed = 0;
@@ -687,7 +666,7 @@ function maybeDropPowerUp(brick) {
   if (bricks.length === 0 || Math.random() > 0.27) {
     return;
   }
-  const types = ["wide", "slow", "life", "shield", "drink", "sticky"];
+  const types = ["wide", "slow", "life", "shield", "sticky"];
   powerUps.push({
     x: brick.x + brick.width / 2 - 10,
     y: brick.y + brick.height / 2 - 10,
@@ -732,8 +711,6 @@ function collectPowerUp(powerUp) {
     }
   } else if (powerUp.type === "shield") {
     shieldCharges = Math.min(2, shieldCharges + 1);
-  } else if (powerUp.type === "drink") {
-    activeEffects.drink = 10;
   } else if (powerUp.type === "sticky") {
     activeEffects.sticky = 10;
   }
@@ -754,71 +731,9 @@ function updateEffects() {
       setBallSpeed(ballSpeed);
     }
   }
-  if (activeEffects.drink > 0) {
-    activeEffects.drink = Math.max(0, activeEffects.drink - elapsed);
-  }
   if (activeEffects.sticky > 0) {
     activeEffects.sticky = Math.max(0, activeEffects.sticky - elapsed);
   }
-}
-
-function fireDrink() {
-  if (!hasStarted || gameOver || activeEffects.drink <= 0 || drinkCooldown > 0 || drinkPour) {
-    return;
-  }
-  const theme = getDrinkLevelTheme();
-  drinkPour = {
-    x: paddle.x + paddle.width / 2,
-    elapsed: 0,
-    hitBricks: new Set(),
-    colors: [theme.glow, theme.colors[0], theme.colors[2]]
-  };
-  drinkCooldown = 2;
-}
-
-function updateDrinkPour() {
-  drinkCooldown = Math.max(0, drinkCooldown - STEP / 1000);
-  if (!drinkPour) {
-    return false;
-  }
-
-  drinkPour.elapsed += STEP / 1000;
-  const frontY = 42 + Math.min(1, drinkPour.elapsed) * (HEIGHT - 42);
-  const left = drinkPour.x - 24;
-  const right = drinkPour.x + 24;
-  for (let index = bricks.length - 1; index >= 0; index -= 1) {
-    const brick = bricks[index];
-    if (drinkPour.hitBricks.has(brick)
-        || brick.x >= right || brick.x + brick.width <= left
-        || brick.y >= frontY) {
-      continue;
-    }
-
-    drinkPour.hitBricks.add(brick);
-    if (brick.type === "tnt") {
-      if (brick.fuse === null) {
-        brick.fuse = TNT_FUSE_SECONDS;
-        score += 30;
-        createBrickImpact(brick);
-      }
-      continue;
-    }
-
-    brick.hits -= 1;
-    brick.hitFlash = 0.2;
-    const destroyed = brick.hits <= 0;
-    score += destroyed ? 75 : 30;
-    createBrickImpact(brick);
-    if (destroyed) {
-      bricks.splice(index, 1);
-      maybeDropPowerUp(brick);
-    }
-  }
-
-  if (drinkPour.elapsed >= 2) {
-    drinkPour = null;
-  }
-  return bricks.length === 0;
 }
 
 function setBallSpeed(speed) {
@@ -1138,8 +1053,8 @@ function moveBall(targetBall) {
 }
 
 function drawPowerUps() {
-  const colors = { wide: "#4ecdc4", slow: "#9b5de5", life: "#ff4d8d", shield: "#7bdff2", drink: getDrinkLevelTheme().glow, sticky: "#a7e58d" };
-  const labels = { wide: "W", slow: "S", life: "+", shield: "G", drink: "D", sticky: "C" };
+  const colors = { wide: "#4ecdc4", slow: "#9b5de5", life: "#ff4d8d", shield: "#7bdff2", sticky: "#a7e58d" };
+  const labels = { wide: "W", slow: "S", life: "+", shield: "G", sticky: "C" };
   for (const powerUp of powerUps) {
     const color = colors[powerUp.type];
     ctx.save();
@@ -1408,7 +1323,6 @@ function draw() {
   ctx.shadowBlur = 0;
 
   drawBricks();  // bricks.js
-  drawDrinkPour();
   drawDrinkSplashes();
   drawTntBlasts();
   drawPowerUps();
@@ -1571,14 +1485,13 @@ function drawHud() {
     ctx.font = "bold 11px 'Courier New', monospace";
     ctx.fillText(`GUARD x${shieldCharges}`, WIDTH - 16, 58);
   }
-  if (activeEffects.wide > 0 || activeEffects.slow > 0 || activeEffects.drink > 0 || activeEffects.sticky > 0) {
+  if (activeEffects.wide > 0 || activeEffects.slow > 0 || activeEffects.sticky > 0) {
     ctx.textAlign = "center";
     ctx.font = "bold 11px 'Courier New', monospace";
     ctx.fillStyle = "#bcb3ca";
     const effects = [];
     if (activeEffects.wide > 0) effects.push(`WIDE ${Math.ceil(activeEffects.wide)}s`);
     if (activeEffects.slow > 0) effects.push(`SLOW ${Math.ceil(activeEffects.slow)}s`);
-    if (activeEffects.drink > 0) effects.push(`DRINK ${Math.ceil(activeEffects.drink)}s`);
     if (activeEffects.sticky > 0) effects.push(`CATCH ${Math.ceil(activeEffects.sticky)}s`);
     ctx.fillText(effects.join("  "), WIDTH / 2, HEIGHT - 12);
   }
@@ -1642,42 +1555,6 @@ function drawScreenFlash() {
   ctx.globalAlpha = 0.34 * fade * fade;
   ctx.fillStyle = screenFlashColor;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  ctx.restore();
-}
-
-function drawDrinkPour() {
-  if (!drinkPour) {
-    return;
-  }
-
-  const progress = Math.min(1, drinkPour.elapsed);
-  const frontY = 42 + progress * (HEIGHT - 42);
-  const remaining = Math.max(0, 1 - Math.max(0, drinkPour.elapsed - 1));
-  const left = drinkPour.x - 24;
-  const colors = drinkPour.colors;
-  const gradient = ctx.createLinearGradient(left, 42, left + 48, 42);
-  gradient.addColorStop(0, `${colors[0]}22`);
-  gradient.addColorStop(0.35, `${colors[1]}bb`);
-  gradient.addColorStop(0.7, `${colors[2]}a8`);
-  gradient.addColorStop(1, `${colors[0]}33`);
-
-  ctx.save();
-  ctx.globalAlpha = remaining;
-  ctx.shadowColor = colors[0];
-  ctx.shadowBlur = 22;
-  ctx.fillStyle = gradient;
-  ctx.fillRect(left, 42, 48, Math.max(0, frontY - 42));
-  if (progress < 1) {
-    const ripple = Math.sin(drinkPour.elapsed * 34) * 4;
-    ctx.fillStyle = colors[2];
-    ctx.beginPath();
-    ctx.ellipse(drinkPour.x, frontY + ripple, 26, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "rgba(255, 255, 255, 0.62)";
-    ctx.beginPath();
-    ctx.ellipse(drinkPour.x, frontY + ripple - 2, 15, 2, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
   ctx.restore();
 }
 

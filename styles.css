@@ -446,14 +446,6 @@ canvas {
   outline-offset: 3px;
 }
 
-#fire-button {
-  width: 104px;
-  border-color: rgba(255, 209, 102, 0.58);
-  color: var(--gold);
-  font-size: 13px;
-  letter-spacing: 0.12em;
-}
-
 .powerup-legend {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
